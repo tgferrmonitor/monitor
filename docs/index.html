@@ -115,7 +115,7 @@
       async function fetchHoursForDate(isoDate) {
         const date = convertToDDMMYYYY(isoDate);
         const base = BUCKET_URL.replace(/\/+$/, '');
-        const url = `${base}/reports/hours_${date}.json`;
+        const url = `${base}/hours_${date}.json`;
 
         try {
           console.log(`Tentando carregar horas: ${url}`);
@@ -193,10 +193,7 @@
 
         // Mostrar presenças do dia inicial (mantendo compatibilidade)
         const date = convertToDDMMYYYY(start);
-        const url = `${BUCKET_URL.replace(
-          /\/+$/,
-          ''
-        )}/reports/results_${date}.json`;
+        const url = `${BUCKET_URL.replace(/\/+$/, '')}/results_${date}.json`;
         try {
           const res = await fetch(url);
           if (!res.ok) throw new Error('Relatório não encontrado');
