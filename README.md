@@ -110,3 +110,30 @@ Arquivo gerado automaticamente pelo agente; peça ajustes se quiser mais detalhe
 # monitor
 monitor
 ```
+
+## Nota sobre UI / MUI
+
+- MUI (Material-UI) é uma biblioteca de componentes para React. Integrar MUI significa migrar o front estático (`docs/index.html`) para uma pequena aplicação React (por exemplo criada com Vite ou Create React App) e então usar os componentes MUI para construir uma interface mais rica (tabelas, chips, dialogs, etc).
+- Alternativas menos invasivas:
+  - Usar um CSS framework leve (Bootstrap, Bulma ou Tailwind) diretamente no `docs/index.html` para melhorar a aparência sem reescrever em React.
+  - Manter o visual estático atual e, progressivamente, extrair componentes para um pequeno app React quando for conveniente.
+
+Se quiser, eu posso:
+
+- preparar um esqueleto React + MUI em `frontend/` (Vite) que consome os mesmos `reports/*.json` e `players.json`;
+- ou aplicar um tema CSS leve no `docs/index.html` agora para melhorar imediatemente a aparência.
+
+## Relatórios de horas e migração
+
+- O prefixo onde os relatórios de horas são gravados é configurável via a variável de ambiente `S3_HOURS_PREFIX` (padrão `reports/hours`).
+- Se você prefere manter os relatórios dentro de `reports/` (e não em `reports/hours/`), há um script utilitário para migrar os objetos do bucket:
+
+```bash
+# Dry-run (não modifica)
+node scripts/migrate-hours-to-reports.js --src=reports/hours --dst=reports
+
+# Executa efetivamente (copia e remove origem)
+node scripts/migrate-hours-to-reports.js --no-dryrun --src=reports/hours --dst=reports
+```
+
+Use com cuidado e confira os logs; o script respeita as credenciais definidas no `.env`.

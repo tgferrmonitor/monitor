@@ -1,0 +1,2511 @@
+{
+  "swagger": "2.0",
+  "info": {
+    "title": "Friends Api v1",
+    "version": "v1"
+  },
+  "host": "friends.roblox.com",
+  "schemes": [
+    "https"
+  ],
+  "paths": {
+    "/v1/metadata": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "targetUserId",
+            "type": "integer",
+            "format": "int64",
+            "default": 0
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.Models.Response.FriendsPageMetadataResponse"
+            }
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:GetMetadata"
+          ]
+        }
+      }
+    },
+    "/v1/my/friends/count": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Get the number of friends a user has",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.FriendsCountResponse"
+            }
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:GetFriendsCount"
+          ]
+        }
+      }
+    },
+    "/v1/my/friends/requests": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Get all users that friend requests with targetUserId using exclusive start paging",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "The number of results per request.",
+            "type": "integer",
+            "format": "int32",
+            "default": 10,
+            "enum": [
+              10,
+              18,
+              25,
+              50,
+              100
+            ]
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "description": "The paging cursor for the previous or next page.",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "sortOrder",
+            "description": "Sorted by scoring requests based on request time, mutual friends, and request origin",
+            "type": "string",
+            "default": "Desc",
+            "enum": [
+              "Asc",
+              "Desc"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Web.WebAPI.Models.ApiPageResponse[Roblox.Friends.Api.FriendRequestResponse]"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n6: Invalid parameters."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "2: The user is banned from performing operation.\r\n3: The user is blocked from performing this action."
+          },
+          "429": {
+            "description": "9: The flood limit has been exceeded."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:GetFriendRequests"
+          ]
+        }
+      }
+    },
+    "/v1/my/new-friend-requests/count": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.Models.Response.NewFriendRequestsCountResponse"
+            }
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:GetNewFriendRequestsCount"
+          ]
+        }
+      }
+    },
+    "/v1/my/trusted-friends/{userId}/status": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Gets trusted friend status of a specified user against the requesting user.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "description": "The user to check the trusted friend status for.",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.TrustedFriendStatusResponse"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:GetTrustedFriendStatus"
+          ]
+        }
+      }
+    },
+    "/v1/user/{userId}/multiget-are-trusted-friends": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Check if the requesting user is trusted friends with the specified users.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "description": "The requesting userId.",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "query",
+            "name": "userIds",
+            "description": "The user ids to check against with the requesting user.",
+            "required": true,
+            "type": "array",
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "collectionFormat": "csv"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.MultigetAreTrustedFriendsResponse"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:MultigetAreTrustedFriends"
+          ]
+        }
+      }
+    },
+    "/v1/user/friend-requests/count": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Return the number of pending friend requests.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.PendingFriendRequestCountModel"
+            }
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:GetPendingFriendRequestCount"
+          ]
+        }
+      }
+    },
+    "/v1/users/{targetUserId}/followers": {
+      "get": {
+        "tags": [
+          "Followings"
+        ],
+        "summary": "Get all users that follow user with targetUserId in page response format",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "targetUserId",
+            "description": "",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "The number of results per request.",
+            "type": "integer",
+            "format": "int32",
+            "default": 10,
+            "enum": [
+              10,
+              18,
+              25,
+              50,
+              100
+            ]
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "description": "The paging cursor for the previous or next page.",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "sortOrder",
+            "description": "The order the results are sorted in.",
+            "type": "string",
+            "default": "Asc",
+            "enum": [
+              "Asc",
+              "Desc"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Web.WebAPI.Models.ApiPageResponse[Roblox.Friends.Api.Models.Response.UserResponse]"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n6: Invalid parameters."
+          },
+          "403": {
+            "description": "2: The user is banned from performing operation.\r\n3: The user is blocked from performing this action."
+          },
+          "429": {
+            "description": "9: The flood limit has been exceeded."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Followings:GetFollowers"
+          ]
+        }
+      }
+    },
+    "/v1/users/{targetUserId}/followers/count": {
+      "get": {
+        "tags": [
+          "Followings"
+        ],
+        "summary": "Get the number of following a user has",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "targetUserId",
+            "description": "",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.FollowCountResponse"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Followings:GetFollowersCount"
+          ]
+        }
+      }
+    },
+    "/v1/users/{targetUserId}/followings": {
+      "get": {
+        "tags": [
+          "Followings"
+        ],
+        "summary": "Get all users that user with targetUserId is following in page response format",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "targetUserId",
+            "description": "",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "The number of results per request.",
+            "type": "integer",
+            "format": "int32",
+            "default": 10,
+            "enum": [
+              10,
+              18,
+              25,
+              50,
+              100
+            ]
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "description": "The paging cursor for the previous or next page.",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "sortOrder",
+            "description": "The order the results are sorted in.",
+            "type": "string",
+            "default": "Asc",
+            "enum": [
+              "Asc",
+              "Desc"
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Web.WebAPI.Models.ApiPageResponse[Roblox.Friends.Api.Models.Response.UserResponse]"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n6: Invalid parameters."
+          },
+          "403": {
+            "description": "2: The user is banned from performing operation.\r\n3: The user is blocked from performing this action."
+          },
+          "429": {
+            "description": "9: The flood limit has been exceeded."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Followings:GetFollowings"
+          ]
+        }
+      }
+    },
+    "/v1/users/{targetUserId}/followings/count": {
+      "get": {
+        "tags": [
+          "Followings"
+        ],
+        "summary": "Get the number of following a user has",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "targetUserId",
+            "description": "",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.FollowCountResponse"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Followings:GetFollowingCount"
+          ]
+        }
+      }
+    },
+    "/v1/users/{userId}/friends": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Get list of all friends for the specified user.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "description": "The user Id to get the friends for.",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "query",
+            "name": "userSort",
+            "description": "Specifies how to sort the returned friends.",
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+              0,
+              1,
+              2
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Web.WebAPI.Models.ApiArrayResponse[Roblox.Friends.Api.Models.Response.UserResponse]"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:GetAllFriends"
+          ]
+        }
+      }
+    },
+    "/v1/users/{userId}/friends/count": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Get the number of friends a user has",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.FriendsCountResponse"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:GetUsersFriendsCount"
+          ]
+        }
+      }
+    },
+    "/v1/users/{userId}/friends/find": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Get a paginated list of all friends for the specified user.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "description": "The user Id to get the friends for.",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "query",
+            "name": "userSort",
+            "description": "Specifies how to sort the returned friends.",
+            "type": "integer",
+            "format": "int32",
+            "default": 2,
+            "enum": [
+              0,
+              1,
+              2
+            ]
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "description": "The paging cursor for the previous or next page.",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "The number of results per request.",
+            "type": "integer",
+            "format": "int32",
+            "default": 50
+          },
+          {
+            "in": "query",
+            "name": "findFriendsType",
+            "type": "integer",
+            "format": "int32",
+            "default": 0,
+            "enum": [
+              0,
+              1
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Paging.CursoredPagedResult[Roblox.Friends.Api.Models.Response.FriendResponse]"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n6: Invalid parameters."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:FindFriends"
+          ]
+        }
+      }
+    },
+    "/v1/users/{userId}/friends/inactive": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Get list of inactive friends for the specified user.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "description": "The user Id to get the friends for.",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Web.WebAPI.Models.ApiArrayResponse[Roblox.Friends.Api.Models.Response.UserResponse]"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n6: Invalid parameters."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:GetInactiveFriends"
+          ]
+        }
+      }
+    },
+    "/v1/users/{userId}/friends/online": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Get list of all online friends for the specified user.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "description": "The user Id to get the friends for.",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "query",
+            "name": "userSort",
+            "description": "The sort order to return the friends.",
+            "type": "integer",
+            "format": "int32",
+            "enum": [
+              0,
+              1,
+              2
+            ]
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Web.WebAPI.Models.ApiArrayResponse[Roblox.Friends.Api.Models.Response.UserPresenceResponse]"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n6: Invalid parameters."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:GetAllOnlineFriends"
+          ]
+        }
+      }
+    },
+    "/v1/users/{userId}/friends/search": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Search for friends by name using a text query.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "description": "The user Id to get the friends for.",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "query",
+            "name": "query",
+            "description": "The string to search names of friends for.",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "cursor",
+            "description": "The paging cursor for the previous or next page.",
+            "type": "string"
+          },
+          {
+            "in": "query",
+            "name": "limit",
+            "description": "The number of results per request.",
+            "type": "integer",
+            "format": "int32",
+            "default": 20
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Paging.CursoredPagedResult[Roblox.Friends.Api.Models.Response.FriendResponse]"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n6: Invalid parameters."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:SearchFriends"
+          ]
+        }
+      }
+    },
+    "/v1/users/{userId}/friends/statuses": {
+      "get": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Gets a list of friend statuses of specified users against the specified user.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "description": "The user to check the friend statuses against.",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "query",
+            "name": "userIds",
+            "description": "",
+            "required": true,
+            "type": "array",
+            "items": {
+              "format": "int64",
+              "type": "integer"
+            },
+            "collectionFormat": "csv"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Web.WebAPI.Models.ApiArrayResponse[Roblox.Friends.Api.FriendStatusResponse]"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n15: Too many ids.\r\n16: Invalid ids."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:GetFriendStatuses"
+          ]
+        }
+      }
+    },
+    "/v1/contacts/{targetContactId}/request-friendship": {
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Send a contact friend request to target user",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "targetContactId",
+            "description": "The target contact Id for friend request",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.CaptchaStatusResponseModel"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n5: The target user is already a friend.\r\n6: Invalid parameters.\r\n7: The user cannot be friends with itself.\r\n31: User with max friends sent friend request."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed\r\n2: The user is banned from performing operation.\r\n3: The user is blocked from performing this action.\r\n14: The user has not passed the captcha."
+          },
+          "429": {
+            "description": "9: The flood limit has been exceeded."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:RequestContactFriendship"
+          ]
+        }
+      }
+    },
+    "/v1/my/friends/refresh-qr-session": {
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.Models.Response.RefreshQrSessionResponse"
+            }
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed"
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:RegisterQRSession"
+          ]
+        }
+      }
+    },
+    "/v1/user/{userId}/multiget-are-friends": {
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Check if the requesting user is friends with the specified users.",
+        "consumes": [
+          "application/json",
+          "text/json"
+        ],
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "userId",
+            "description": "The requesting userId.",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "multigetAreFriendsRequestModel",
+            "description": "The user ids to check against with the requesting user.",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.MultigetAreFriendsRequestModel"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.MultigetAreFriendsResponse"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist."
+          },
+          "403": {
+            "description": "0: Token Validation Failed"
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:MultigetAreFriends"
+          ]
+        }
+      }
+    },
+    "/v1/user/following-exists": {
+      "post": {
+        "tags": [
+          "Followings"
+        ],
+        "summary": "Returns whether or not the current user is following each userId in a list of userIds",
+        "consumes": [
+          "application/json",
+          "text/json"
+        ],
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "body",
+            "name": "requestModel",
+            "description": "The userIds potentially being followed",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.FollowingExistsRequestModel"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.Models.Response.FollowingExistsResponseModel"
+            }
+          },
+          "400": {
+            "description": "0: An invalid userId was passed in."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed"
+          },
+          "503": {
+            "description": "1: Followers are disabled at this time."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Followings:FollowingExists"
+          ]
+        }
+      }
+    },
+    "/v1/user/friend-requests/decline-all": {
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Decline all pending friend requests for the authenticated user.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.Models.Response.DeclineAllFriendRequestsResponse"
+            }
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed"
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:DeclineAllFriendRequests"
+          ]
+        }
+      }
+    },
+    "/v1/users/{requesterUserId}/accept-friend-request": {
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Accept a friend request.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "requesterUserId",
+            "description": "The user Id of the requester",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Web.WebAPI.ApiEmptyResponseModel"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n10: The friend request does not exist.\r\n11: The current users friends limit has been exceeded.\r\n12: The target users friends limit has been exceeded."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed\r\n3: The user is blocked from performing this action."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:AcceptFriendRequest"
+          ]
+        }
+      }
+    },
+    "/v1/users/{requesterUserId}/accept-trusted-friend-request": {
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Accept a trusted friend request.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "requesterUserId",
+            "description": "Id of user who sent trusted friend request",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.AcceptTrustedFriendRequestResponse"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed\r\n2: The user is banned from performing operation.\r\n3: The user is blocked from performing this action."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:AcceptTrustedFriendRequest"
+          ]
+        }
+      }
+    },
+    "/v1/users/{requesterUserId}/decline-friend-request": {
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Decline a friend request.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "requesterUserId",
+            "description": "The user Id of the requester",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Web.WebAPI.ApiEmptyResponseModel"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n10: The friend request does not exist."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed"
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:DeclineFriendRequest"
+          ]
+        }
+      }
+    },
+    "/v1/users/{requesterUserId}/ignore-trusted-friend-request": {
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Ignore a trusted friend request.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "requesterUserId",
+            "description": "Id of user who sent the trusted friend request",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.IgnoreTrustedFriendRequestResponse"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed"
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:IgnoreTrustedFriendRequest"
+          ]
+        }
+      }
+    },
+    "/v1/users/{senderUserId}/accept-friend-request-with-token": {
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Accept a friend request with an Off Network Friending token.",
+        "consumes": [
+          "application/json",
+          "text/json"
+        ],
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "senderUserId",
+            "description": "The user id of the sender of the off network friend request",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "requestModel",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.Models.Request.FriendingTokenRequestModel"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Web.WebAPI.ApiEmptyResponseModel"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n3: The user is blocked from performing this action.\r\n5: The target user is already a friend.\r\n6: Invalid parameters.\r\n7: The user cannot be friends with itself.\r\n11: The current users friends limit has been exceeded.\r\n12: The target users friends limit has been exceeded."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed"
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:AcceptFriendRequestWithToken"
+          ]
+        }
+      }
+    },
+    "/v1/users/{targetUserId}/follow": {
+      "post": {
+        "tags": [
+          "Followings"
+        ],
+        "summary": "Creates the following between a user and user with targetUserId",
+        "consumes": [
+          "application/json",
+          "text/json"
+        ],
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "targetUserId",
+            "description": "",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "captchaTokenRequest",
+            "description": "",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Web.Captcha.Models.Request.CaptchaTokenRequest"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.CaptchaStatusResponseModel"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n6: Invalid parameters.\r\n8: The user cannot follow itself."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed\r\n2: The user is banned from performing operation.\r\n3: The user is blocked from performing this action.\r\n14: The user has not passed the captcha."
+          },
+          "429": {
+            "description": "9: The flood limit has been exceeded."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Followings:FollowUser"
+          ]
+        }
+      }
+    },
+    "/v1/users/{targetUserId}/remove-trusted-friend": {
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Removes target user as trusted friend.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "targetUserId",
+            "description": "The target user id to remove as trusted friend",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.RemoveTrustedFriendResponse"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed"
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:RemoveTrustedFriend"
+          ]
+        }
+      }
+    },
+    "/v1/users/{targetUserId}/request-friendship": {
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Send a friend request to target user",
+        "consumes": [
+          "application/json",
+          "text/json"
+        ],
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "targetUserId",
+            "description": "The target user Id for friend request",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          },
+          {
+            "in": "body",
+            "name": "friendshipRequestModel",
+            "description": "The source which the friend request originated from",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.FriendshipRequestModel"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.CaptchaStatusResponseModel"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n5: The target user is already a friend.\r\n6: Invalid parameters.\r\n7: The user cannot be friends with itself.\r\n10: The friend request does not exist.\r\n13: The users are not in the same game.\r\n31: User with max friends sent friend request.\r\n35: Invalid nickname."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed\r\n2: The user is banned from performing operation.\r\n3: The user is blocked from performing this action.\r\n14: The user has not passed the captcha."
+          },
+          "429": {
+            "description": "9: The flood limit has been exceeded."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:RequestFriendship"
+          ]
+        }
+      }
+    },
+    "/v1/users/{targetUserId}/send-trusted-friend-request": {
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Send a trusted friend request.",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "targetUserId",
+            "description": "Id of target user for the trusted friend request",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.SendTrustedFriendRequestResponse"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed\r\n2: The user is banned from performing operation.\r\n3: The user is blocked from performing this action."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:SendTrustedFriendRequest"
+          ]
+        }
+      }
+    },
+    "/v1/users/{targetUserId}/unfollow": {
+      "post": {
+        "tags": [
+          "Followings"
+        ],
+        "summary": "Deletes the following between a user and user with targetUserId",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "targetUserId",
+            "description": "",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Web.WebAPI.ApiEmptyResponseModel"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist.\r\n6: Invalid parameters.\r\n8: The user cannot follow itself."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed\r\n2: The user is banned from performing operation.\r\n3: The user is blocked from performing this action.\r\n14: The user has not passed the captcha."
+          },
+          "429": {
+            "description": "9: The flood limit has been exceeded."
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Followings:UnFollowUser"
+          ]
+        }
+      }
+    },
+    "/v1/users/{targetUserId}/unfriend": {
+      "post": {
+        "tags": [
+          "Friends"
+        ],
+        "summary": "Unfriend a user",
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "parameters": [
+          {
+            "in": "path",
+            "name": "targetUserId",
+            "description": "The target user id to unfriend",
+            "required": true,
+            "type": "integer",
+            "format": "int64"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Web.WebAPI.ApiEmptyResponseModel"
+            }
+          },
+          "400": {
+            "description": "1: The target user is invalid or does not exist."
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed"
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:UnFriend"
+          ]
+        }
+      }
+    },
+    "/v1/my/new-friend-requests": {
+      "delete": {
+        "tags": [
+          "Friends"
+        ],
+        "produces": [
+          "application/json",
+          "text/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/Roblox.Friends.Api.Models.Response.ClearNewFriendRequestResponse"
+            }
+          },
+          "401": {
+            "description": "0: Authorization has been denied for this request."
+          },
+          "403": {
+            "description": "0: Token Validation Failed"
+          }
+        },
+        "properties": {
+          "internal": false,
+          "metricIds": [
+            "Friends:ClearNewFriendRequestsCount"
+          ]
+        }
+      }
+    }
+  },
+  "definitions": {
+    "Roblox.Friends.Api.AcceptTrustedFriendRequestResponse": {
+      "description": "Response model for AcceptTrustedFriendRequestResposne",
+      "type": "object",
+      "properties": {
+        "success": {
+          "description": "Success",
+          "type": "boolean"
+        }
+      }
+    },
+    "Roblox.Friends.Api.CaptchaStatusResponseModel": {
+      "description": "This is response model to notify when action succeeded, failed, or captcha is required",
+      "type": "object",
+      "properties": {
+        "success": {
+          "type": "boolean"
+        },
+        "isCaptchaRequired": {
+          "description": "Captcha is set to true if captcha is required from user to perform action",
+          "type": "boolean"
+        }
+      }
+    },
+    "Roblox.Friends.Api.FollowCountResponse": {
+      "description": "Response model for following or followers Count",
+      "type": "object",
+      "properties": {
+        "count": {
+          "format": "int64",
+          "description": "Count of following or followers",
+          "type": "integer"
+        }
+      }
+    },
+    "Roblox.Friends.Api.FollowingExistsRequestModel": {
+      "description": "Request model for FollowingExists endpoint",
+      "type": "object",
+      "properties": {
+        "targetUserIds": {
+          "description": "The userIds which the user may or may not be following.",
+          "type": "array",
+          "items": {
+            "format": "int64",
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "Roblox.Friends.Api.FriendRequest": {
+      "description": "A response model representing a friend request.",
+      "type": "object",
+      "properties": {
+        "sentAt": {
+          "format": "date-time",
+          "description": "When the friend request was sent.",
+          "type": "string"
+        },
+        "senderId": {
+          "format": "int64",
+          "description": "The sender user Id.",
+          "type": "integer"
+        },
+        "sourceUniverseId": {
+          "format": "int64",
+          "description": "The source universe Id which the request was sent in.",
+          "type": "integer"
+        },
+        "originSourceType": {
+          "format": "int32",
+          "description": "The origin source type associated with the friend request. ['Unknown' = 0, 'PlayerSearch' = 1, 'QrCode' = 2, 'InGame' = 3, 'UserProfile' = 4, 'QqContactImporter' = 5, 'WeChatContactImporter' = 6, 'ProfileShare' = 7, 'PhoneContactImporter' = 8, 'FriendRecommendations' = 9]",
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "type": "integer"
+        },
+        "contactName": {
+          "description": "The contact name associated with the friend request.",
+          "type": "string"
+        },
+        "senderNickname": {
+          "description": "The nickname associated with the friend request.",
+          "type": "string"
+        }
+      }
+    },
+    "Roblox.Friends.Api.FriendRequestResponse": {
+      "description": "A response model representing a friend request.",
+      "type": "object",
+      "properties": {
+        "friendRequest": {
+          "$ref": "#/definitions/Roblox.Friends.Api.FriendRequest"
+        },
+        "mutualFriendsList": {
+          "description": "mutualFriendsList",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "hasVerifiedBadge": {
+          "description": "The user's verified badge status.",
+          "type": "boolean"
+        },
+        "description": {
+          "description": "The user description.",
+          "type": "string"
+        },
+        "created": {
+          "format": "date-time",
+          "description": "When the user signed up.",
+          "type": "string"
+        },
+        "isBanned": {
+          "description": "Whether or not the user is banned",
+          "type": "boolean"
+        },
+        "externalAppDisplayName": {
+          "description": "Used when user is logged in from third party app (e.g. QQ)\r\nExternalAppDisplayName is the name used in that app (e.g. QQ nickname)",
+          "type": "string"
+        },
+        "id": {
+          "format": "int64",
+          "description": "The user Id.",
+          "type": "integer"
+        },
+        "name": {
+          "description": "The user name.",
+          "type": "string"
+        },
+        "displayName": {
+          "description": "The user DisplayName.",
+          "type": "string"
+        }
+      }
+    },
+    "Roblox.Friends.Api.FriendStatusResponse": {
+      "description": "The friendship status response model.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "format": "int64",
+          "description": "The user Id of the friend.",
+          "type": "integer"
+        },
+        "status": {
+          "format": "int32",
+          "description": "The friendship status. ['NotFriends' = 0, 'Friends' = 1, 'RequestSent' = 2, 'RequestReceived' = 3]",
+          "enum": [
+            0,
+            1,
+            2,
+            3
+          ],
+          "type": "integer"
+        }
+      }
+    },
+    "Roblox.Friends.Api.FriendsCountResponse": {
+      "description": "Response model for Friends Count",
+      "type": "object",
+      "properties": {
+        "count": {
+          "format": "int32",
+          "description": "Count of friends",
+          "type": "integer"
+        }
+      }
+    },
+    "Roblox.Friends.Api.FriendshipRequestModel": {
+      "type": "object",
+      "properties": {
+        "friendshipOriginSourceType": {
+          "format": "int32",
+          "description": "Which source the friend request originated from ['Unknown' = 0, 'PlayerSearch' = 1, 'QrCode' = 2, 'InGame' = 3, 'UserProfile' = 4, 'QqContactImporter' = 5, 'WeChatContactImporter' = 6, 'ProfileShare' = 7, 'PhoneContactImporter' = 8, 'FriendRecommendations' = 9]",
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6,
+            7,
+            8,
+            9
+          ],
+          "type": "integer"
+        },
+        "senderNickname": {
+          "description": "Optional nickname attached to friend request",
+          "type": "string"
+        }
+      }
+    },
+    "Roblox.Friends.Api.IgnoreTrustedFriendRequestResponse": {
+      "description": "Response model for IgnoreTrustedFriendRequestResponse",
+      "type": "object",
+      "properties": {
+        "success": {
+          "description": "Success",
+          "type": "boolean"
+        }
+      }
+    },
+    "Roblox.Friends.Api.Models.Request.FriendingTokenRequestModel": {
+      "description": "Request model for AcceptFriendRequestWithToken endpoint",
+      "type": "object",
+      "properties": {
+        "friendingToken": {
+          "description": "FriendingToken to authorize the creation of an Off Network Friend request",
+          "type": "string"
+        }
+      }
+    },
+    "Roblox.Friends.Api.Models.Response.ClearNewFriendRequestResponse": {
+      "description": "The friendship status response model.",
+      "type": "object",
+      "properties": {
+        "status": {
+          "description": "Returns if the cache was successfully cleared.",
+          "type": "boolean"
+        }
+      }
+    },
+    "Roblox.Friends.Api.Models.Response.DeclineAllFriendRequestsResponse": {
+      "description": "response for DeclineAllFriendRequests",
+      "type": "object",
+      "properties": {
+        "backgrounded": {
+          "description": "Whether or not the decline all job has been backgrounded",
+          "type": "boolean"
+        }
+      }
+    },
+    "Roblox.Friends.Api.Models.Response.FollowingExistsResponse": {
+      "description": "Response contained in list for FollowingExists endpoint. Corresponds to a single userId.",
+      "type": "object",
+      "properties": {
+        "isFollowing": {
+          "description": "Whether or not a user is following userId in FriendsController.FollowingExists",
+          "type": "boolean"
+        },
+        "isFollowed": {
+          "description": "Whether or not a user is followed by userId in FriendsController.FollowingExists",
+          "type": "boolean"
+        },
+        "userId": {
+          "format": "int64",
+          "description": "The userId being potentially followed",
+          "type": "integer"
+        }
+      }
+    },
+    "Roblox.Friends.Api.Models.Response.FollowingExistsResponseModel": {
+      "description": "Response model for FollowingExists endpoint.",
+      "type": "object",
+      "properties": {
+        "followings": {
+          "description": "A list of userIds and whether or not the given user is following them.",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Roblox.Friends.Api.Models.Response.FollowingExistsResponse"
+          }
+        }
+      }
+    },
+    "Roblox.Friends.Api.Models.Response.FriendResponse": {
+      "description": "A response model representing friend information",
+      "type": "object",
+      "properties": {
+        "id": {
+          "format": "int64",
+          "description": "The friend's userId",
+          "type": "integer"
+        },
+        "hasVerifiedBadge": {
+          "description": "The friend's verified badge status.",
+          "type": "boolean"
+        }
+      }
+    },
+    "Roblox.Friends.Api.Models.Response.FriendsPageMetadataResponse": {
+      "type": "object",
+      "properties": {
+        "isFriendsFilterBarEnabled": {
+          "type": "boolean",
+          "readOnly": true
+        },
+        "isFriendsPageSortExperimentEnabled": {
+          "type": "boolean",
+          "readOnly": true
+        },
+        "isFriendsUserDataStoreCacheEnabled": {
+          "type": "boolean",
+          "readOnly": true
+        },
+        "frequentFriendSortRollout": {
+          "format": "int32",
+          "type": "integer",
+          "readOnly": true
+        },
+        "userName": {
+          "type": "string"
+        },
+        "displayName": {
+          "type": "string"
+        }
+      }
+    },
+    "Roblox.Friends.Api.Models.Response.NewFriendRequestsCountResponse": {
+      "description": "The friendship status response model.",
+      "type": "object",
+      "properties": {
+        "count": {
+          "format": "int64",
+          "description": "Count of new friend requests.",
+          "type": "integer"
+        }
+      }
+    },
+    "Roblox.Friends.Api.Models.Response.RefreshQrSessionResponse": {
+      "type": "object",
+      "properties": {
+        "Success": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Roblox.Friends.Api.Models.Response.UserPresenceResponse": {
+      "description": "A response model representing user presence information.",
+      "type": "object",
+      "properties": {
+        "userPresence": {
+          "$ref": "#/definitions/Roblox.Friends.Api.Models.Response.UserPresenceResponseModel"
+        },
+        "id": {
+          "format": "int64",
+          "description": "The user Id.",
+          "type": "integer"
+        },
+        "name": {
+          "description": "The user name.",
+          "type": "string"
+        },
+        "displayName": {
+          "description": "The user DisplayName.",
+          "type": "string"
+        }
+      }
+    },
+    "Roblox.Friends.Api.Models.Response.UserPresenceResponseModel": {
+      "description": "Response model for !:IUserPresence objects",
+      "type": "object",
+      "properties": {
+        "UserPresenceType": {
+          "description": "User Presence Type",
+          "type": "string"
+        },
+        "UserLocationType": {
+          "description": "Location Type",
+          "type": "string"
+        },
+        "lastLocation": {
+          "description": "Last Location",
+          "type": "string"
+        },
+        "placeId": {
+          "format": "int64",
+          "description": "Place Id",
+          "type": "integer"
+        },
+        "rootPlaceId": {
+          "format": "int64",
+          "description": "Root Place Id",
+          "type": "integer"
+        },
+        "gameInstanceId": {
+          "format": "uuid",
+          "description": "Game Instance Id",
+          "type": "string"
+        },
+        "universeId": {
+          "format": "int64",
+          "description": "Universe Id",
+          "type": "integer"
+        },
+        "lastOnline": {
+          "format": "date-time",
+          "description": "Most recent time online",
+          "type": "string"
+        },
+        "joinability": {
+          "format": "int32",
+          "description": "Joinability information ['Invalid' = 0, 'Joinable' = 1, 'PlaceNotJoinable' = 2, 'PrivateServer' = 3, 'FullServer' = 4]",
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "type": "integer"
+        }
+      }
+    },
+    "Roblox.Friends.Api.Models.Response.UserResponse": {
+      "description": "A response model representing user information that also contains select presence information",
+      "type": "object",
+      "properties": {
+        "isOnline": {
+          "description": "Whether the user is online.",
+          "type": "boolean"
+        },
+        "presenceType": {
+          "format": "int32",
+          "description": "Where the user is online.",
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4
+          ],
+          "type": "integer"
+        },
+        "isDeleted": {
+          "description": "Whether the user is deleted.",
+          "type": "boolean"
+        },
+        "friendFrequentScore": {
+          "format": "int64",
+          "description": "Frequents value for the user.",
+          "type": "integer"
+        },
+        "friendFrequentRank": {
+          "format": "int64",
+          "description": "Frequents rank for the user.",
+          "type": "integer"
+        },
+        "hasVerifiedBadge": {
+          "description": "The user's verified badge status.",
+          "type": "boolean"
+        },
+        "description": {
+          "description": "The user description.",
+          "type": "string"
+        },
+        "created": {
+          "format": "date-time",
+          "description": "When the user signed up.",
+          "type": "string"
+        },
+        "isBanned": {
+          "description": "Whether or not the user is banned",
+          "type": "boolean"
+        },
+        "externalAppDisplayName": {
+          "description": "Used when user is logged in from third party app (e.g. QQ)\r\nExternalAppDisplayName is the name used in that app (e.g. QQ nickname)",
+          "type": "string"
+        },
+        "id": {
+          "format": "int64",
+          "description": "The user Id.",
+          "type": "integer"
+        },
+        "name": {
+          "description": "The user name.",
+          "type": "string"
+        },
+        "displayName": {
+          "description": "The user DisplayName.",
+          "type": "string"
+        }
+      }
+    },
+    "Roblox.Friends.Api.MultigetAreFriendsRequestModel": {
+      "description": "Request model for MultigetAreFriends endpoint",
+      "type": "object",
+      "properties": {
+        "targetUserIds": {
+          "description": "The target userIds to check against with the requesting user regarding friendship.",
+          "type": "array",
+          "items": {
+            "format": "int64",
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "Roblox.Friends.Api.MultigetAreFriendsResponse": {
+      "description": "Response model for MultigetAreFriendsResponse",
+      "type": "object",
+      "properties": {
+        "friendsId": {
+          "description": "friends id list",
+          "type": "array",
+          "items": {
+            "format": "int64",
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "Roblox.Friends.Api.MultigetAreTrustedFriendsResponse": {
+      "description": "Response model for MultigetAreTrustedFriendsRequest",
+      "type": "object",
+      "properties": {
+        "trustedFriendsId": {
+          "description": "List of trusted friend ids",
+          "type": "array",
+          "items": {
+            "format": "int64",
+            "type": "integer"
+          }
+        }
+      }
+    },
+    "Roblox.Friends.Api.PendingFriendRequestCountModel": {
+      "description": "Response model for Pending Friend Request Count",
+      "type": "object",
+      "properties": {
+        "count": {
+          "format": "int32",
+          "description": "Count of pending friend requests",
+          "type": "integer"
+        }
+      }
+    },
+    "Roblox.Friends.Api.RemoveTrustedFriendResponse": {
+      "description": "Response model for RemoveTrustedFriendResponse",
+      "type": "object",
+      "properties": {
+        "success": {
+          "description": "Success",
+          "type": "boolean"
+        }
+      }
+    },
+    "Roblox.Friends.Api.SendTrustedFriendRequestResponse": {
+      "description": "Response model for SendTrustedFriendRequestResponse",
+      "type": "object",
+      "properties": {
+        "success": {
+          "description": "Success",
+          "type": "boolean"
+        }
+      }
+    },
+    "Roblox.Friends.Api.TrustedFriendStatusResponse": {
+      "description": "The trusted friend status response model",
+      "type": "object",
+      "properties": {
+        "status": {
+          "format": "int32",
+          "description": "The trusted friend status. ['Invalid' = 0, 'NotFriends' = 1, 'Friends' = 2, 'TrustedFriends' = 3, 'RequestSent' = 4, 'RequestReceived' = 5, 'RequestIgnored' = 6]",
+          "enum": [
+            0,
+            1,
+            2,
+            3,
+            4,
+            5,
+            6
+          ],
+          "type": "integer"
+        }
+      }
+    },
+    "Roblox.Paging.CursoredPagedResult[Roblox.Friends.Api.Models.Response.FriendResponse]": {
+      "type": "object",
+      "properties": {
+        "PreviousCursor": {
+          "type": "string"
+        },
+        "PageItems": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Roblox.Friends.Api.Models.Response.FriendResponse"
+          }
+        },
+        "NextCursor": {
+          "type": "string"
+        },
+        "HasMore": {
+          "type": "boolean"
+        }
+      }
+    },
+    "Roblox.Paging.ExclusiveStartKeyCursor[System.String]": {
+      "type": "object",
+      "properties": {
+        "key": {
+          "type": "string"
+        },
+        "sortOrder": {
+          "format": "int32",
+          "description": " ['Asc' = 1, 'Desc' = 2]",
+          "enum": [
+            1,
+            2
+          ],
+          "type": "integer"
+        },
+        "pagingDirection": {
+          "format": "int32",
+          "description": " ['Forward' = 1, 'Backward' = 2]",
+          "enum": [
+            1,
+            2
+          ],
+          "type": "integer"
+        },
+        "pageNumber": {
+          "format": "int32",
+          "type": "integer"
+        },
+        "discriminator": {
+          "type": "string"
+        },
+        "count": {
+          "format": "int32",
+          "type": "integer"
+        }
+      }
+    },
+    "Roblox.Platform.Core.ExclusiveStartPaging.IExclusiveStartKeyInfo[Roblox.Web.Friends.FriendRequestsPlatformExclusiveStartKey]": {
+      "type": "object",
+      "properties": {
+        "SortOrder": {
+          "format": "int32",
+          "description": " ['Asc' = 1, 'Desc' = 2]",
+          "enum": [
+            1,
+            2
+          ],
+          "type": "integer",
+          "readOnly": true
+        },
+        "PagingDirection": {
+          "format": "int32",
+          "description": " ['Forward' = 1, 'Backward' = 2]",
+          "enum": [
+            1,
+            2
+          ],
+          "type": "integer",
+          "readOnly": true
+        },
+        "Count": {
+          "format": "int32",
+          "type": "integer",
+          "readOnly": true
+        }
+      }
+    },
+    "Roblox.Platform.Core.ExclusiveStartPaging.IExclusiveStartKeyInfo[System.Int64]": {
+      "type": "object",
+      "properties": {
+        "SortOrder": {
+          "format": "int32",
+          "description": " ['Asc' = 1, 'Desc' = 2]",
+          "enum": [
+            1,
+            2
+          ],
+          "type": "integer",
+          "readOnly": true
+        },
+        "PagingDirection": {
+          "format": "int32",
+          "description": " ['Forward' = 1, 'Backward' = 2]",
+          "enum": [
+            1,
+            2
+          ],
+          "type": "integer",
+          "readOnly": true
+        },
+        "Count": {
+          "format": "int32",
+          "type": "integer",
+          "readOnly": true
+        }
+      }
+    },
+    "Roblox.Web.Captcha.Models.Request.CaptchaTokenRequest": {
+      "type": "object",
+      "properties": {
+        "captchaId": {
+          "type": "string"
+        },
+        "captchaToken": {
+          "type": "string"
+        },
+        "captchaProvider": {
+          "type": "string"
+        },
+        "challengeId": {
+          "type": "string"
+        }
+      }
+    },
+    "Roblox.Web.WebAPI.ApiEmptyResponseModel": {
+      "type": "object"
+    },
+    "Roblox.Web.WebAPI.ExclusiveStartRequest[Roblox.Web.Friends.FriendRequestsPlatformExclusiveStartKey]": {
+      "type": "object",
+      "properties": {
+        "ExclusiveStartKeyInfo": {
+          "$ref": "#/definitions/Roblox.Platform.Core.ExclusiveStartPaging.IExclusiveStartKeyInfo[Roblox.Web.Friends.FriendRequestsPlatformExclusiveStartKey]"
+        },
+        "CursorRecipe": {
+          "type": "string"
+        }
+      }
+    },
+    "Roblox.Web.WebAPI.ExclusiveStartRequest[System.Int64]": {
+      "type": "object",
+      "properties": {
+        "ExclusiveStartKeyInfo": {
+          "$ref": "#/definitions/Roblox.Platform.Core.ExclusiveStartPaging.IExclusiveStartKeyInfo[System.Int64]"
+        },
+        "CursorRecipe": {
+          "type": "string"
+        }
+      }
+    },
+    "Roblox.Web.WebAPI.Models.ApiArrayResponse[Roblox.Friends.Api.FriendStatusResponse]": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Roblox.Friends.Api.FriendStatusResponse"
+          }
+        }
+      }
+    },
+    "Roblox.Web.WebAPI.Models.ApiArrayResponse[Roblox.Friends.Api.Models.Response.UserPresenceResponse]": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Roblox.Friends.Api.Models.Response.UserPresenceResponse"
+          }
+        }
+      }
+    },
+    "Roblox.Web.WebAPI.Models.ApiArrayResponse[Roblox.Friends.Api.Models.Response.UserResponse]": {
+      "type": "object",
+      "properties": {
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Roblox.Friends.Api.Models.Response.UserResponse"
+          }
+        }
+      }
+    },
+    "Roblox.Web.WebAPI.Models.ApiPageResponse[Roblox.Friends.Api.FriendRequestResponse]": {
+      "type": "object",
+      "properties": {
+        "previousPageCursor": {
+          "type": "string"
+        },
+        "nextPageCursor": {
+          "type": "string"
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Roblox.Friends.Api.FriendRequestResponse"
+          }
+        }
+      }
+    },
+    "Roblox.Web.WebAPI.Models.ApiPageResponse[Roblox.Friends.Api.Models.Response.UserResponse]": {
+      "type": "object",
+      "properties": {
+        "previousPageCursor": {
+          "type": "string"
+        },
+        "nextPageCursor": {
+          "type": "string"
+        },
+        "data": {
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/Roblox.Friends.Api.Models.Response.UserResponse"
+          }
+        }
+      }
+    },
+    "System.ValueTuple[Roblox.Web.WebAPI.ExclusiveStartRequest[System.Int64],Roblox.Paging.ExclusiveStartKeyCursor[System.String]]": {
+      "type": "object",
+      "properties": {
+        "Item1": {
+          "$ref": "#/definitions/Roblox.Web.WebAPI.ExclusiveStartRequest[System.Int64]"
+        },
+        "Item2": {
+          "$ref": "#/definitions/Roblox.Paging.ExclusiveStartKeyCursor[System.String]"
+        }
+      }
+    }
+  }
+}

@@ -7,6 +7,9 @@ on:
 
 jobs:
   monitor:
+    concurrency:
+      group: monitor-job
+      cancel-in-progress: false
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
@@ -27,3 +30,4 @@ jobs:
           PLAYERS: ${{ secrets.PLAYERS }}
           TZ_OFFSET_MINUTES: ${{ secrets.TZ_OFFSET_MINUTES }}
           ROBLOSECURITY: ${{ secrets.ROBLOSECURITY }}
+          S3_HOURS_PREFIX: ${{ secrets.S3_HOURS_PREFIX }}
