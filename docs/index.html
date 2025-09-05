@@ -49,7 +49,14 @@
   <body>
     <h1>📊 Relatórios de Jogadores Roblox</h1>
 
-    <label>Data: <input type="date" id="dateInput" /></label>
+    <label>Data Início: <input type="date" id="dateStart" /></label>
+    <label>Data Fim: <input type="date" id="dateEnd" /></label>
+    <label
+      >Jogador:
+      <select id="playerFilter">
+        <option value="">(todos)</option>
+      </select></label
+    >
     <button onclick="loadReport()">Carregar</button>
 
     <div id="reportArea"></div>
@@ -57,7 +64,7 @@
 
     <script>
       let BUCKET_URL =
-        "https://bucket-tgferr-monitor.br-se1.magaluobjects.com/reports";
+        "https://bucket-tgferr-monitor.br-se1.magaluobjects.com/";
 
       // Tenta carregar docs/config.json para sobrepor BUCKET_URL em desenvolvimento
       let playersMap = new Map();
@@ -84,30 +91,96 @@
           const list = await res.json();
           for (const p of list) playersMap.set(String(p.id), p);
           console.log("Players carregados localmente", playersMap.size);
+          // preencher select de filtro
+          const sel = document.getElementById("playerFilter");
+          for (const p of list) {
+            const opt = document.createElement("option");
+            opt.value = String(p.id);
+            opt.textContent = `${p.displayName || p.name} (${p.id})`;
+            sel.appendChild(opt);
+          }
         } catch (e) {
           // silencioso
         }
       }
 
+      // Tenta carregar um objeto JSON a partir de múltiplos prefixes (prioriza reports/hours)
+      async function fetchHoursForDate(date) {
+        const base = BUCKET_URL.replace(/\/+$/, "");
+        const candidates = [];
+        // Se o base já termina com /reports, evite duplicar
+        if (base.endsWith("/reports")) {
+          candidates.push(`${base}/hours/${date}.json`);
+          candidates.push(`${base}/${date}.json`);
+          // também tente sem o "/reports" (caso o bucket URL já aponte para a pasta)
+          candidates.push(
+            `${base.replace(/\/reports$/, "")}/hours/${date}.json`
+          );
+          candidates.push(`${base.replace(/\/reports$/, "")}/${date}.json`);
+        } else {
+          // base sem /reports
+          candidates.push(`${base}/hours/${date}.json`);
+          candidates.push(`${base}/${date}.json`);
+          candidates.push(`${base}/reports/hours/${date}.json`);
+          candidates.push(`${base}/reports/${date}.json`);
+        }
+        for (const url of candidates) {
+          try {
+            console.log(`Tentando carregar horas: ${url}`);
+            const res = await fetch(url);
+            if (res.ok) {
+              const json = await res.json();
+              // Validar estrutura esperada de relatório de horas
+              if (
+                (json && typeof json === "object" && json.minutesByUser) ||
+                (json && typeof json === "object" && json.hoursByUser)
+              ) {
+                console.log(`Horas: arquivo válido encontrado em ${url}`);
+                return json;
+              } else {
+                console.log(
+                  `Arquivo encontrado mas não é relatório de horas (ignorando): ${url}`
+                );
+              }
+            } else {
+              console.log(`Não encontrado (status ${res.status}): ${url}`);
+            }
+          } catch (e) {
+            console.log(`Erro ao fetch ${url}:`, e && e.message);
+            // continua para o próximo
+          }
+        }
+        return null;
+      }
+
+      // Carrega relatório para um dia ou intervalo e aplica filtro de jogador
       async function loadReport() {
-        const date = document.getElementById("dateInput").value;
-        if (!date) return alert("Escolha uma data!");
+        const start = document.getElementById("dateStart").value;
+        const end = document.getElementById("dateEnd").value;
+        if (!start || !end) return alert("Escolha data início e fim!");
+        const startDate = new Date(start);
+        const endDate = new Date(end);
+        if (startDate > endDate)
+          return alert("Data início deve ser <= data fim");
+
+        // filtro por jogador (opcional)
+        const playerFilter = document.getElementById("playerFilter").value;
+
+        // Para simplicidade mostramos apenas o primeiro dia selecionado na tabela
+        const date = start; // manter compatibilidade com o formato YYYY-MM-DD
         const url = `${BUCKET_URL}/${date}.json`;
         try {
           const res = await fetch(url);
           if (!res.ok) throw new Error("Relatório não encontrado");
           const data = await res.json();
-          // tenta também carregar relatório de horas (reports/hours/YYYY-MM-DD.json)
-          let hours = null;
-          try {
-            const hoursUrl = `${BUCKET_URL.replace(
-              /\/+$/,
-              ""
-            )}/hours/${date}.json`;
-            const hrsRes = await fetch(hoursUrl);
-            if (hrsRes.ok) hours = await hrsRes.json();
-          } catch (e) {
-            // ignore
+
+          const hours = await fetchHoursForDate(date);
+
+          // aplicar filtro por jogador (se houver)
+          if (playerFilter) {
+            data.userPresences = data.userPresences.filter(
+              (p) => String(p.userId) === String(playerFilter)
+            );
           }
 
           renderReport(data, hours);
@@ -177,13 +250,30 @@
         html += "</table>";
         div.innerHTML = html;
 
-        // Gráfico simples - contagem online / offline
-        const onlineCount = data.userPresences.filter(
-          (p) => p.userPresenceType === 1
-        ).length;
-        const offlineCount = data.userPresences.filter(
-          (p) => p.userPresenceType === 0
-        ).length;
+        // Gráfico: mostrar todos os status (0..4) e contá-los
+        const statusCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, unknown: 0 };
+        for (const p of data.userPresences) {
+          const k = String(p.userPresenceType);
+          if (k in statusCounts) statusCounts[k]++;
+          else statusCounts.unknown++;
+        }
+
+        const labels = [
+          "Offline",
+          "Online",
+          "InGame",
+          "InStudio",
+          "Invisible",
+          "Desconhecido",
+        ];
+        const dataset = [
+          statusCounts[0],
+          statusCounts[1],
+          statusCounts[2],
+          statusCounts[3],
+          statusCounts[4],
+          statusCounts.unknown,
+        ];
 
         const ctx = document.getElementById("chart");
         // Destrói instancia anterior do Chart.js para evitar erro "Canvas is already in use"
@@ -199,12 +289,19 @@
         chartInstance = new Chart(ctx, {
           type: "bar",
           data: {
-            labels: ["Online", "Offline"],
+            labels,
             datasets: [
               {
                 label: "Número de jogadores",
-                data: [onlineCount, offlineCount],
-                backgroundColor: ["#4caf50", "#f44336"],
+                data: dataset,
+                backgroundColor: [
+                  "#f44336",
+                  "#4caf50",
+                  "#2196f3",
+                  "#ff9800",
+                  "#607d8b",
+                  "#9e9e9e",
+                ],
               },
             ],
           },
@@ -215,6 +312,21 @@
           },
         });
       }
+
+      // Ao carregar a página, preencher as datas (hoje) e players
+      function setTodayInputs() {
+        const today = new Date();
+        const pad = (n) => n.toString().padStart(2, "0");
+        const iso = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(
+          today.getDate()
+        )}`;
+        document.getElementById("dateStart").value = iso;
+        document.getElementById("dateEnd").value = iso;
+      }
+
+      // inicializar
+      setTodayInputs();
+      loadPlayers();
     </script>
   </body>
 </html>
