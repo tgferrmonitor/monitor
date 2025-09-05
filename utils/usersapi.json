@@ -5,20 +5,13 @@
     "version": "v1"
   },
   "host": "users.roblox.com",
-  "schemes": [
-    "https"
-  ],
+  "schemes": ["https"],
   "paths": {
     "/v1/birthdate": {
       "get": {
-        "tags": [
-          "AccountInformation"
-        ],
+        "tags": ["AccountInformation"],
         "summary": "Get the user's birthdate",
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "produces": ["application/json", "text/json"],
         "responses": {
           "200": {
             "description": "OK",
@@ -35,24 +28,14 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "AccountInformation:GetBirthdate"
-          ]
+          "metricIds": ["AccountInformation:GetBirthdate"]
         }
       },
       "post": {
-        "tags": [
-          "AccountInformation"
-        ],
+        "tags": ["AccountInformation"],
         "summary": "Update the user's birthdate",
-        "consumes": [
-          "application/json",
-          "text/json"
-        ],
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "consumes": ["application/json", "text/json"],
+        "produces": ["application/json", "text/json"],
         "parameters": [
           {
             "in": "body",
@@ -86,22 +69,15 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "AccountInformation:SetBirthdate"
-          ]
+          "metricIds": ["AccountInformation:SetBirthdate"]
         }
       }
     },
     "/v1/description": {
       "get": {
-        "tags": [
-          "AccountInformation"
-        ],
+        "tags": ["AccountInformation"],
         "summary": "Get the user's description",
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "produces": ["application/json", "text/json"],
         "responses": {
           "200": {
             "description": "OK",
@@ -118,24 +94,14 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "AccountInformation:GetDescription"
-          ]
+          "metricIds": ["AccountInformation:GetDescription"]
         }
       },
       "post": {
-        "tags": [
-          "AccountInformation"
-        ],
+        "tags": ["AccountInformation"],
         "summary": "Update the user's description",
-        "consumes": [
-          "application/json",
-          "text/json"
-        ],
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "consumes": ["application/json", "text/json"],
+        "produces": ["application/json", "text/json"],
         "parameters": [
           {
             "in": "body",
@@ -172,22 +138,15 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "AccountInformation:SetDescription"
-          ]
+          "metricIds": ["AccountInformation:SetDescription"]
         }
       }
     },
     "/v1/display-names/validate": {
       "get": {
-        "tags": [
-          "DisplayNames"
-        ],
+        "tags": ["DisplayNames"],
         "summary": "Validate a display name for a new user.",
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "produces": ["application/json", "text/json"],
         "parameters": [
           {
             "in": "query",
@@ -221,22 +180,15 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "DisplayNames:ValidateNewUserDisplayName"
-          ]
+          "metricIds": ["DisplayNames:ValidateNewUserDisplayName"]
         }
       }
     },
     "/v1/gender": {
       "get": {
-        "tags": [
-          "AccountInformation"
-        ],
+        "tags": ["AccountInformation"],
         "summary": "Get the user's gender",
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "produces": ["application/json", "text/json"],
         "responses": {
           "200": {
             "description": "OK",
@@ -253,24 +205,14 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "AccountInformation:GetGender"
-          ]
+          "metricIds": ["AccountInformation:GetGender"]
         }
       },
       "post": {
-        "tags": [
-          "AccountInformation"
-        ],
+        "tags": ["AccountInformation"],
         "summary": "Update the user's gender",
-        "consumes": [
-          "application/json",
-          "text/json"
-        ],
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "consumes": ["application/json", "text/json"],
+        "produces": ["application/json", "text/json"],
         "parameters": [
           {
             "in": "body",
@@ -304,22 +246,15 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "AccountInformation:SetGender"
-          ]
+          "metricIds": ["AccountInformation:SetGender"]
         }
       }
     },
     "/v1/users/{userId}": {
       "get": {
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "summary": "Gets detailed user information by id.",
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "produces": ["application/json", "text/json"],
         "parameters": [
           {
             "in": "path",
@@ -343,22 +278,15 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "Users:GetUser"
-          ]
+          "metricIds": ["Users:GetUser"]
         }
       }
     },
     "/v1/users/{userId}/display-names/validate": {
       "get": {
-        "tags": [
-          "DisplayNames"
-        ],
+        "tags": ["DisplayNames"],
         "summary": "Validate a display name for an existing user.",
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "produces": ["application/json", "text/json"],
         "parameters": [
           {
             "in": "path",
@@ -398,22 +326,15 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "DisplayNames:ValidateExistingUserDisplayName"
-          ]
+          "metricIds": ["DisplayNames:ValidateExistingUserDisplayName"]
         }
       }
     },
     "/v1/users/{userId}/username-history": {
       "get": {
-        "tags": [
-          "Usernames"
-        ],
+        "tags": ["Usernames"],
         "summary": "Retrieves the username history for a particular user.",
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "produces": ["application/json", "text/json"],
         "parameters": [
           {
             "in": "path",
@@ -430,12 +351,7 @@
             "type": "integer",
             "format": "int32",
             "default": 10,
-            "enum": [
-              10,
-              25,
-              50,
-              100
-            ]
+            "enum": [10, 25, 50, 100]
           },
           {
             "in": "query",
@@ -449,10 +365,7 @@
             "description": "The order the results are sorted in.",
             "type": "string",
             "default": "Asc",
-            "enum": [
-              "Asc",
-              "Desc"
-            ]
+            "enum": ["Asc", "Desc"]
           }
         ],
         "responses": {
@@ -468,22 +381,15 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "Usernames:GetUsernameHistory"
-          ]
+          "metricIds": ["Usernames:GetUsernameHistory"]
         }
       }
     },
     "/v1/users/authenticated": {
       "get": {
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "summary": "Gets the minimal authenticated user.",
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "produces": ["application/json", "text/json"],
         "responses": {
           "200": {
             "description": "OK",
@@ -497,22 +403,15 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "Users:GetAuthenticatedUser"
-          ]
+          "metricIds": ["Users:GetAuthenticatedUser"]
         }
       }
     },
     "/v1/users/authenticated/age-bracket": {
       "get": {
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "summary": "Gets the age bracket of the authenticated user.",
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "produces": ["application/json", "text/json"],
         "responses": {
           "200": {
             "description": "OK",
@@ -526,22 +425,15 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "Users:GetAuthenticatedUserAgeBracket"
-          ]
+          "metricIds": ["Users:GetAuthenticatedUserAgeBracket"]
         }
       }
     },
     "/v1/users/authenticated/country-code": {
       "get": {
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "summary": "Gets the country code of the authenticated user.",
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "produces": ["application/json", "text/json"],
         "responses": {
           "200": {
             "description": "OK",
@@ -555,22 +447,15 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "Users:GetAuthenticatedUserCountryCode"
-          ]
+          "metricIds": ["Users:GetAuthenticatedUserCountryCode"]
         }
       }
     },
     "/v1/users/authenticated/roles": {
       "get": {
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "summary": "Gets the (public) roles of the authenticated user, such as `\"Soothsayer\"` and `\"BetaTester\"`.",
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "produces": ["application/json", "text/json"],
         "responses": {
           "200": {
             "description": "OK",
@@ -584,22 +469,15 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "Users:GetAuthenticatedUserPublicRoles"
-          ]
+          "metricIds": ["Users:GetAuthenticatedUserPublicRoles"]
         }
       }
     },
     "/v1/users/search": {
       "get": {
-        "tags": [
-          "UserSearch"
-        ],
+        "tags": ["UserSearch"],
         "summary": "Searches for users by keyword.",
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "produces": ["application/json", "text/json"],
         "parameters": [
           {
             "in": "query",
@@ -620,12 +498,7 @@
             "type": "integer",
             "format": "int32",
             "default": 10,
-            "enum": [
-              10,
-              25,
-              50,
-              100
-            ]
+            "enum": [10, 25, 50, 100]
           },
           {
             "in": "query",
@@ -650,27 +523,17 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "UserSearch:SearchUsers"
-          ]
+          "metricIds": ["UserSearch:SearchUsers"]
         }
       }
     },
     "/v1/usernames/users": {
       "post": {
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "summary": "Get users by usernames.",
         "description": "This endpoint will also check previous usernames.\r\nDoes not require X-CSRF-Token protection because this is essentially a get request but as a POST to avoid URI limits.",
-        "consumes": [
-          "application/json",
-          "text/json"
-        ],
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "consumes": ["application/json", "text/json"],
+        "produces": ["application/json", "text/json"],
         "parameters": [
           {
             "in": "body",
@@ -695,27 +558,17 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "Users:MultiGetUsersByUsernames"
-          ]
+          "metricIds": ["Users:MultiGetUsersByUsernames"]
         }
       }
     },
     "/v1/users": {
       "post": {
-        "tags": [
-          "Users"
-        ],
+        "tags": ["Users"],
         "summary": "Get users by ids.",
         "description": "Does not require X-CSRF-Token protection because this is essentially a get request but as a POST to avoid URI limits.",
-        "consumes": [
-          "application/json",
-          "text/json"
-        ],
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "consumes": ["application/json", "text/json"],
+        "produces": ["application/json", "text/json"],
         "parameters": [
           {
             "in": "body",
@@ -740,26 +593,16 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "Users:MultiGetUsersByIds"
-          ]
+          "metricIds": ["Users:MultiGetUsersByIds"]
         }
       }
     },
     "/v1/users/{userId}/display-names": {
       "patch": {
-        "tags": [
-          "DisplayNames"
-        ],
+        "tags": ["DisplayNames"],
         "summary": "Set the display name for the authorized user.",
-        "consumes": [
-          "application/json",
-          "text/json"
-        ],
-        "produces": [
-          "application/json",
-          "text/json"
-        ],
+        "consumes": ["application/json", "text/json"],
+        "produces": ["application/json", "text/json"],
         "parameters": [
           {
             "in": "path",
@@ -801,9 +644,7 @@
         },
         "properties": {
           "internal": false,
-          "metricIds": [
-            "DisplayNames:SetDisplayName"
-          ]
+          "metricIds": ["DisplayNames:SetDisplayName"]
         }
       }
     }
@@ -819,19 +660,13 @@
         "sortOrder": {
           "format": "int32",
           "description": " ['Asc' = 1, 'Desc' = 2]",
-          "enum": [
-            1,
-            2
-          ],
+          "enum": [1, 2],
           "type": "integer"
         },
         "pagingDirection": {
           "format": "int32",
           "description": " ['Forward' = 1, 'Backward' = 2]",
-          "enum": [
-            1,
-            2
-          ],
+          "enum": [1, 2],
           "type": "integer"
         },
         "pageNumber": {
@@ -955,11 +790,7 @@
         "gender": {
           "format": "int32",
           "description": "The gender ['Unknown' = 1, 'Male' = 2, 'Female' = 3]",
-          "enum": [
-            1,
-            2,
-            3
-          ],
+          "enum": [1, 2, 3],
           "type": "integer"
         }
       }
