@@ -2,7 +2,7 @@ name: Monitor Roblox
 
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: '*/5 * * * *'
   workflow_dispatch:
 
 jobs:
@@ -30,4 +30,3 @@ jobs:
           PLAYERS: ${{ secrets.PLAYERS }}
           TZ_OFFSET_MINUTES: ${{ secrets.TZ_OFFSET_MINUTES }}
           ROBLOSECURITY: ${{ secrets.ROBLOSECURITY }}
-          S3_HOURS_PREFIX: ${{ secrets.S3_HOURS_PREFIX }}
