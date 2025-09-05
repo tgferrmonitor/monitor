@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Relatórios Roblox</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
+    th, td { border: 1px solid #ddd; padding: 8px; }
+    th { background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h1>📊 Relatórios de Jogadores Roblox</h1>
+
+  <label>Data: <input type="date" id="dateInput"></label>
+  <button onclick="loadReport()">Carregar</button>
+
+  <div id="reportArea"></div>
+  <canvas id="chart" height="100"></canvas>
+
+<script>
+const BUCKET_URL = "https://bucket-tgferr-monitor.br-se1.magaluobjects.com/reports/";
+
+async function loadReport() {
+  const date = document.getElementById("dateInput").value;
+  if (!date) return alert("Escolha uma data!");
+  const url = `${BUCKET_URL}/${date}.json`;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) throw new Error("Relatório não encontrado");
+    const data = await res.json();
+    renderReport(data);
+  } catch (e) {
+    alert("Erro: " + e.message);
+  }
+}
+
+function renderReport(data) {
+  const div = document.getElementById("reportArea");
+  div.innerHTML = "";
+  for (const [player, info] of Object.entries(data.players)) {
+    let html = `<h2>${player}</h2>`;
+    html += `<p>Total online: ${info.totalOnline} min | Total jogando: ${info.totalPlaying} min</p>`;
+    html += `<table><tr><th>Início</th><th>Fim</th><th>Status</th><th>Jogo</th><th>Duração (min)</th></tr>`;
+    for (const s of info.sessions) {
+      html += `<tr>
+        <td>${s.start}</td>
+        <td>${s.end || "-"}</td>
+        <td>${s.status}</td>
+        <td>${s.game || "-"}</td>
+        <td>${s.totalMinutes || "-"}</td>
+      </tr>`;
+    }
+    html += `</table>`;
+    div.innerHTML += html;
+  }
+
+  // gráfico simples (tempo online por player)
+  const ctx = document.getElementById("chart");
+  new Chart(ctx, {
+    type: "bar",
+    data: {
+      labels: Object.keys(data.players),
+      datasets: [{
+        label: "Tempo total online (min)",
+        data: Object.values(data.players).map(p => p.totalOnline)
+      }]
+    }
+  });
+}
+</script>
+</body>
+</html>
