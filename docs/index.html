@@ -67,19 +67,24 @@
 
     <script>
       let BUCKET_URL =
-        "https://bucket-tgferr-monitor.br-se1.magaluobjects.com/";
+        'https://bucket-tgferr-monitor.br-se1.magaluobjects.com/';
 
       // Tenta carregar docs/config.json para sobrepor BUCKET_URL em desenvolvimento
       let playersMap = new Map();
 
+      function convertToDDMMYYYY(isoDate) {
+        const [year, month, day] = isoDate.split('-');
+        return `${day}-${month}-${year}`;
+      }
+
       async function loadConfig() {
         try {
-          const res = await fetch("./config.json");
+          const res = await fetch('./config.json');
           if (!res.ok) return;
           const cfg = await res.json();
           if (cfg.BUCKET_URL) {
             BUCKET_URL = cfg.BUCKET_URL;
-            console.log("Config carregada:", BUCKET_URL);
+            console.log('Config carregada:', BUCKET_URL);
           }
         } catch (e) {
           // silencioso - fallback mantém o BUCKET_URL embutido
@@ -89,15 +94,15 @@
       // Tenta carregar players.json local para mapear IDs -> nomes
       async function loadPlayers() {
         try {
-          const res = await fetch("./players.json");
+          const res = await fetch('./players.json');
           if (!res.ok) return;
           const list = await res.json();
           for (const p of list) playersMap.set(String(p.id), p);
-          console.log("Players carregados localmente", playersMap.size);
+          console.log('Players carregados localmente', playersMap.size);
           // preencher select de filtro
-          const sel = document.getElementById("playerFilter");
+          const sel = document.getElementById('playerFilter');
           for (const p of list) {
-            const opt = document.createElement("option");
+            const opt = document.createElement('option');
             opt.value = String(p.id);
             opt.textContent = `${p.displayName || p.name} (${p.id})`;
             sel.appendChild(opt);
@@ -107,51 +112,32 @@
         }
       }
 
-      // Tenta carregar um objeto JSON a partir de múltiplos prefixes (prioriza reports/hours)
-      async function fetchHoursForDate(date) {
-        const base = BUCKET_URL.replace(/\/+$/, "");
-        const candidates = [];
-        // Se o base já termina com /reports, evite duplicar
-        if (base.endsWith("/reports")) {
-          candidates.push(`${base}/hours/${date}.json`);
-          candidates.push(`${base}/${date}.json`);
-          // também tente sem o "/reports" (caso o bucket URL já aponte para a pasta)
-          candidates.push(
-            `${base.replace(/\/reports$/, "")}/hours/${date}.json`
-          );
-          candidates.push(`${base.replace(/\/reports$/, "")}/${date}.json`);
-        } else {
-          // base sem /reports
-          candidates.push(`${base}/hours/${date}.json`);
-          candidates.push(`${base}/${date}.json`);
-          candidates.push(`${base}/reports/hours/${date}.json`);
-          candidates.push(`${base}/reports/${date}.json`);
-        }
-        for (const url of candidates) {
-          try {
-            console.log(`Tentando carregar horas: ${url}`);
-            const res = await fetch(url);
-            if (res.ok) {
-              const json = await res.json();
-              // Validar estrutura esperada de relatório de horas
-              if (
-                (json && typeof json === "object" && json.minutesByUser) ||
-                (json && typeof json === "object" && json.hoursByUser)
-              ) {
-                console.log(`Horas: arquivo válido encontrado em ${url}`);
-                return json;
-              } else {
-                console.log(
-                  `Arquivo encontrado mas não é relatório de horas (ignorando): ${url}`
-                );
-              }
+      async function fetchHoursForDate(isoDate) {
+        const date = convertToDDMMYYYY(isoDate);
+        const base = BUCKET_URL.replace(/\/+$/, '');
+        const url = `${base}/reports/hours_${date}.json`;
+
+        try {
+          console.log(`Tentando carregar horas: ${url}`);
+          const res = await fetch(url);
+          if (res.ok) {
+            const json = await res.json();
+            if (
+              (json && typeof json === 'object' && json.minutesByUser) ||
+              (json && typeof json === 'object' && json.hoursByUser)
+            ) {
+              console.log(`Horas: arquivo válido encontrado em ${url}`);
+              return json;
             } else {
-              console.log(`Não encontrado (status ${res.status}): ${url}`);
+              console.log(
+                `Arquivo encontrado mas não é relatório de horas (ignorando): ${url}`
+              );
             }
-          } catch (e) {
-            console.log(`Erro ao fetch ${url}:`, e && e.message);
-            // continua para o próximo
+          } else {
+            console.log(`Não encontrado (status ${res.status}): ${url}`);
           }
+        } catch (e) {
+          console.log(`Erro ao fetch ${url}:`, e && e.message);
         }
         return null;
       }
@@ -167,7 +153,7 @@
           d <= endDate;
           d.setDate(d.getDate() + 1)
         ) {
-          const pad = (n) => n.toString().padStart(2, "0");
+          const pad = (n) => n.toString().padStart(2, '0');
           const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
             d.getDate()
           )}`;
@@ -194,23 +180,26 @@
 
       // Carrega relatório para um dia (exibe presenças do primeiro dia) e agrega horas no intervalo
       async function loadReport() {
-        const start = document.getElementById("dateStart").value;
-        const end = document.getElementById("dateEnd").value;
-        if (!start || !end) return alert("Escolha data início e fim!");
+        const start = document.getElementById('dateStart').value;
+        const end = document.getElementById('dateEnd').value;
+        if (!start || !end) return alert('Escolha data início e fim!');
         const startDate = new Date(start);
         const endDate = new Date(end);
         if (startDate > endDate)
-          return alert("Data início deve ser <= data fim");
+          return alert('Data início deve ser <= data fim');
 
         // filtro por jogador (opcional)
-        const playerFilter = document.getElementById("playerFilter").value;
+        const playerFilter = document.getElementById('playerFilter').value;
 
         // Mostrar presenças do dia inicial (mantendo compatibilidade)
-        const date = start;
-        const url = `${BUCKET_URL.replace(/\/+$/, "")}/${date}.json`;
+        const date = convertToDDMMYYYY(start);
+        const url = `${BUCKET_URL.replace(
+          /\/+$/,
+          ''
+        )}/reports/results_${date}.json`;
         try {
           const res = await fetch(url);
-          if (!res.ok) throw new Error("Relatório não encontrado");
+          if (!res.ok) throw new Error('Relatório não encontrado');
           const data = await res.json();
 
           const aggregatedHours = await aggregateHoursForRange(start, end);
@@ -224,7 +213,7 @@
 
           renderReport(data, aggregatedHours);
         } catch (e) {
-          alert("Erro: " + e.message);
+          alert('Erro: ' + e.message);
         }
       }
 
@@ -235,24 +224,24 @@
       let chartInstance = null;
 
       function renderReport(data, hoursData) {
-        const div = document.getElementById("reportArea");
-        div.innerHTML = "";
+        const div = document.getElementById('reportArea');
+        div.innerHTML = '';
 
         if (
           !Array.isArray(data.userPresences) ||
           data.userPresences.length === 0
         ) {
-          div.innerHTML = "<p>Nenhum dado disponível para esta data.</p>";
+          div.innerHTML = '<p>Nenhum dado disponível para esta data.</p>';
           return;
         }
 
         // ordenar e paginar
-        const sortBy = document.getElementById("sortBy")
-          ? document.getElementById("sortBy").value
-          : "presence";
-        const sortDir = document.getElementById("sortDir")
-          ? document.getElementById("sortDir").value
-          : "desc";
+        const sortBy = document.getElementById('sortBy')
+          ? document.getElementById('sortBy').value
+          : 'presence';
+        const sortDir = document.getElementById('sortDir')
+          ? document.getElementById('sortDir').value
+          : 'desc';
 
         // criar cópia para ordenação
         let presList = Array.from(data.userPresences || []);
@@ -263,16 +252,16 @@
           0;
 
         presList.sort((a, b) => {
-          if (sortBy === "hours") {
+          if (sortBy === 'hours') {
             return (
               (getHours(b.userId) - getHours(a.userId)) *
-              (sortDir === "asc" ? -1 : 1)
+              (sortDir === 'asc' ? -1 : 1)
             );
           }
           // ordenar por presence type
           return (
             (b.userPresenceType - a.userPresenceType) *
-            (sortDir === "asc" ? -1 : 1)
+            (sortDir === 'asc' ? -1 : 1)
           );
         });
 
@@ -284,20 +273,20 @@
         const pageSlice = presList.slice(startIndex, startIndex + pageSize);
 
         let html =
-          "<table><tr><th>Usuário</th><th>Presença</th><th>Última Localização</th><th>Horas hoje</th></tr>";
+          '<table><tr><th>Usuário</th><th>Presença</th><th>Última Localização</th><th>Horas hoje</th></tr>';
 
         for (const info of pageSlice) {
           // Mapear presence types: 0=Offline,1=Online,2=InGame,3=InStudio,4=Invisible
           const presenceMap = {
-            0: { text: "Offline", cls: "offline" },
-            1: { text: "Online", cls: "online" },
-            2: { text: "InGame", cls: "ingame" },
-            3: { text: "InStudio", cls: "instudio" },
-            4: { text: "Invisible", cls: "invisible" },
+            0: { text: 'Offline', cls: 'offline' },
+            1: { text: 'Online', cls: 'online' },
+            2: { text: 'InGame', cls: 'ingame' },
+            3: { text: 'InStudio', cls: 'instudio' },
+            4: { text: 'Invisible', cls: 'invisible' },
           };
           const p = presenceMap[info.userPresenceType] || {
-            text: "Desconhecido",
-            cls: "",
+            text: 'Desconhecido',
+            cls: '',
           };
           const presenceText = `<span class="badge ${p.cls}">${p.text}</span>`;
 
@@ -310,25 +299,25 @@
             hoursData &&
             hoursData.hoursByUser &&
             hoursData.hoursByUser[String(info.userId)]
-              ? hoursData.hoursByUser[String(info.userId)] + " h"
-              : "-";
+              ? hoursData.hoursByUser[String(info.userId)] + ' h'
+              : '-';
 
           html += `<tr>
       <td>${title}<div style="font-size:0.9em;color:#666;">ID: ${
             info.userId
           }</div></td>
       <td>${presenceText}</td>
-      <td>${info.lastLocation || "-"}</td>
+      <td>${info.lastLocation || '-'}</td>
       <td style="text-align:center">${hoursText}</td>
     </tr>`;
         }
 
-        html += "</table>";
+        html += '</table>';
         div.innerHTML = html;
 
         // adicionar paginação / info
-        const pg = document.createElement("div");
-        pg.className = "muted";
+        const pg = document.createElement('div');
+        pg.className = 'muted';
         pg.textContent = `Mostrando ${startIndex + 1} - ${
           startIndex + pageSlice.length
         } de ${presList.length}`;
@@ -343,12 +332,12 @@
         }
 
         const labels = [
-          "Offline",
-          "Online",
-          "InGame",
-          "InStudio",
-          "Invisible",
-          "Desconhecido",
+          'Offline',
+          'Online',
+          'InGame',
+          'InStudio',
+          'Invisible',
+          'Desconhecido',
         ];
         const dataset = [
           statusCounts[0],
@@ -359,7 +348,7 @@
           statusCounts.unknown,
         ];
 
-        const ctx = document.getElementById("chart");
+        const ctx = document.getElementById('chart');
         // Destrói instancia anterior do Chart.js para evitar erro "Canvas is already in use"
         if (chartInstance) {
           try {
@@ -371,20 +360,20 @@
         }
 
         chartInstance = new Chart(ctx, {
-          type: "bar",
+          type: 'bar',
           data: {
             labels,
             datasets: [
               {
-                label: "Número de jogadores",
+                label: 'Número de jogadores',
                 data: dataset,
                 backgroundColor: [
-                  "#f44336",
-                  "#4caf50",
-                  "#2196f3",
-                  "#ff9800",
-                  "#607d8b",
-                  "#9e9e9e",
+                  '#f44336',
+                  '#4caf50',
+                  '#2196f3',
+                  '#ff9800',
+                  '#607d8b',
+                  '#9e9e9e',
                 ],
               },
             ],
@@ -400,32 +389,32 @@
       // Ao carregar a página, preencher as datas (hoje) e players
       function setTodayInputs() {
         const today = new Date();
-        const pad = (n) => n.toString().padStart(2, "0");
+        const pad = (n) => n.toString().padStart(2, '0');
         const iso = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(
           today.getDate()
         )}`;
-        document.getElementById("dateStart").value = iso;
-        document.getElementById("dateEnd").value = iso;
+        document.getElementById('dateStart').value = iso;
+        document.getElementById('dateEnd').value = iso;
       }
 
       // Export CSV da tabela atual
       function exportCSV() {
-        const table = document.querySelector("#reportArea table");
-        if (!table) return alert("Nada para exportar");
+        const table = document.querySelector('#reportArea table');
+        if (!table) return alert('Nada para exportar');
         const rows = [];
-        for (const tr of table.querySelectorAll("tr")) {
-          const cols = Array.from(tr.querySelectorAll("th,td")).map((n) =>
+        for (const tr of table.querySelectorAll('tr')) {
+          const cols = Array.from(tr.querySelectorAll('th,td')).map((n) =>
             n.textContent.trim()
           );
-          rows.push(cols.join(","));
+          rows.push(cols.join(','));
         }
-        const csv = rows.join("\n");
-        const blob = new Blob([csv], { type: "text/csv;charset=utf-8;" });
+        const csv = rows.join('\n');
+        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
         const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
+        const a = document.createElement('a');
         a.href = url;
         a.download = `report-${
-          document.getElementById("dateStart").value || "report"
+          document.getElementById('dateStart').value || 'report'
         }.csv`;
         a.click();
         URL.revokeObjectURL(url);
