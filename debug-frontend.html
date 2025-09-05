@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Debug Frontend Date</title>
+  </head>
+  <body>
+    <h1>Debug - Data do Frontend</h1>
+    <p>Data Início: <input type="date" id="dateStart" /></p>
+    <p>Data Fim: <input type="date" id="dateEnd" /></p>
+    <button onclick="setTodayInputs()">Hoje</button>
+    <button onclick="showCurrentValues()">Mostrar Valores</button>
+    <div id="output"></div>
+
+    <script>
+      function setTodayInputs() {
+        // Usar o mesmo timezone offset que o backend (-180 minutos = GMT-3)
+        const TZ_OFFSET_MINUTES = -180;
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + TZ_OFFSET_MINUTES);
+
+        const pad = (n) => n.toString().padStart(2, '0');
+        const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+          now.getDate()
+        )}`;
+        document.getElementById('dateStart').value = iso;
+        document.getElementById('dateEnd').value = iso;
+
+        console.log('setTodayInputs() executado, data definida:', iso);
+      }
+
+      function convertToDDMMYYYY(isoDate) {
+        const [year, month, day] = isoDate.split('-');
+        return `${day}-${month}-${year}`;
+      }
+
+      function showCurrentValues() {
+        const start = document.getElementById('dateStart').value;
+        const end = document.getElementById('dateEnd').value;
+
+        const output = document.getElementById('output');
+        output.innerHTML = `
+                <h3>Valores Atuais:</h3>
+                <p>Data Início: ${start}</p>
+                <p>Data Fim: ${end}</p>
+                <p>DD-MM-YYYY (início): ${
+                  start ? convertToDDMMYYYY(start) : 'N/A'
+                }</p>
+                <p>URL seria: hours_${
+                  start ? convertToDDMMYYYY(start) : 'N/A'
+                }.json</p>
+            `;
+
+        console.log('Valores atuais:', { start, end });
+      }
+
+      // inicializar
+      setTodayInputs();
+      showCurrentValues();
+    </script>
+  </body>
+</html>

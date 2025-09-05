@@ -78,16 +78,30 @@
       }
 
       async function loadConfig() {
+        // Apenas carregar config.json em desenvolvimento (localhost / 127.0.0.1 / file:)
         try {
+          const host =
+            (typeof location !== 'undefined' && location.hostname) || '';
+          const proto =
+            (typeof location !== 'undefined' && location.protocol) || '';
+          if (
+            host !== 'localhost' &&
+            host !== '127.0.0.1' &&
+            proto !== 'file:'
+          ) {
+            // em produção (GitHub Pages) não carregamos o config local
+            return;
+          }
+
           const res = await fetch('./config.json');
           if (!res.ok) return;
           const cfg = await res.json();
           if (cfg.BUCKET_URL) {
             BUCKET_URL = cfg.BUCKET_URL;
-            console.log('Config carregada:', BUCKET_URL);
+            console.log('Config carregada (dev):', BUCKET_URL);
           }
         } catch (e) {
-          // silencioso - fallback mantém o BUCKET_URL embutido
+          // silencioso - manter fallback embutido
         }
       }
 

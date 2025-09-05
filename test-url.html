@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Test URL Generation</title>
+  </head>
+  <body>
+    <h1>Test URL Generation</h1>
+    <button onclick="testURL()">Test URL Generation</button>
+    <button onclick="testLoadConfig()">Test Load Config</button>
+    <div id="output"></div>
+
+    <script>
+      let BUCKET_URL =
+        'https://bucket-tgferr-monitor.br-se1.magaluobjects.com/bucket-tgferr-monitor/';
+
+      function convertToDDMMYYYY(isoDate) {
+        const [year, month, day] = isoDate.split('-');
+        return `${day}-${month}-${year}`;
+      }
+
+      function setTodayInputs() {
+        const TZ_OFFSET_MINUTES = -180;
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + TZ_OFFSET_MINUTES);
+
+        const pad = (n) => n.toString().padStart(2, '0');
+        const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+          now.getDate()
+        )}`;
+        return iso;
+      }
+
+      async function loadConfig() {
+        try {
+          const res = await fetch('./config.json');
+          if (!res.ok) return;
+          const cfg = await res.json();
+          if (cfg.BUCKET_URL) {
+            BUCKET_URL = cfg.BUCKET_URL;
+            console.log('Config carregada:', BUCKET_URL);
+          }
+        } catch (e) {
+          console.log('Erro ao carregar config:', e);
+        }
+      }
+
+      function testURL() {
+        const isoDate = setTodayInputs();
+        const date = convertToDDMMYYYY(isoDate);
+        const base = BUCKET_URL.replace(/\/+$/, '');
+        const url = `${base}/hours_${date}.json`;
+
+        const output = document.getElementById('output');
+        output.innerHTML = `
+                <h3>URL Generation Test:</h3>
+                <p><strong>BUCKET_URL:</strong> ${BUCKET_URL}</p>
+                <p><strong>ISO Date:</strong> ${isoDate}</p>
+                <p><strong>DD-MM-YYYY:</strong> ${date}</p>
+                <p><strong>Base (after replace):</strong> ${base}</p>
+                <p><strong>Final URL:</strong> ${url}</p>
+            `;
+
+        console.log('URL Generation:', {
+          BUCKET_URL,
+          isoDate,
+          date,
+          base,
+          finalURL: url,
+        });
+      }
+
+      async function testLoadConfig() {
+        await loadConfig();
+        testURL();
+      }
+
+      // Test initial
+      testURL();
+    </script>
+  </body>
+</html>
