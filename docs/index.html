@@ -40,36 +40,52 @@ async function loadReport() {
 function renderReport(data) {
   const div = document.getElementById("reportArea");
   div.innerHTML = "";
-  for (const [player, info] of Object.entries(data.userPresences)) {
-    let html = `<h2>${player}</h2>`;
-    html += `<p>Total online: ${info.totalOnline} min | Total jogando: ${info.totalPlaying} min</p>`;
-    html += `<table><tr><th>Início</th><th>Fim</th><th>Status</th><th>Jogo</th><th>Duração (min)</th></tr>`;
-    for (const s of info.sessions) {
-      html += `<tr>
-        <td>${s.start}</td>
-        <td>${s.end || "-"}</td>
-        <td>${s.status}</td>
-        <td>${s.game || "-"}</td>
-        <td>${s.totalMinutes || "-"}</td>
-      </tr>`;
-    }
-    html += `</table>`;
-    div.innerHTML += html;
+
+  if (!Array.isArray(data) || data.length === 0) {
+    div.innerHTML = "<p>Nenhum dado disponível para esta data.</p>";
+    return;
   }
 
-  // gráfico simples (tempo online por player)
+  let html = "<table><tr><th>User ID</th><th>Presença</th><th>Última Localização</th></tr>";
+
+  for (const info of data.userPresences) {
+    const presenceText = info.userPresenceType === 0 ? "Offline" :
+                         info.userPresenceType === 1 ? "Online" : 
+                         "Desconhecido";
+
+    html += `<tr>
+      <td>${info.userId}</td>
+      <td>${presenceText}</td>
+      <td>${info.lastLocation || "-"}</td>
+    </tr>`;
+  }
+
+  html += "</table>";
+  div.innerHTML = html;
+
+  // Gráfico simples - contagem online / offline
+  const onlineCount = data.filter(p => p.userPresenceType === 1).length;
+  const offlineCount = data.filter(p => p.userPresenceType === 0).length;
+
   const ctx = document.getElementById("chart");
   new Chart(ctx, {
     type: "bar",
     data: {
-      labels: Object.keys(data.players),
+      labels: ["Online", "Offline"],
       datasets: [{
-        label: "Tempo total online (min)",
-        data: Object.values(data.players).map(p => p.totalOnline)
+        label: "Número de jogadores",
+        data: [onlineCount, offlineCount],
+        backgroundColor: ["#4caf50", "#f44336"]
       }]
+    },
+    options: {
+      scales: {
+        y: { beginAtZero: true, precision: 0 }
+      }
     }
   });
 }
+
 </script>
 </body>
 </html>
