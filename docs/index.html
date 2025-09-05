@@ -64,8 +64,8 @@ function renderReport(data) {
   div.innerHTML = html;
 
   // Gráfico simples - contagem online / offline
-  const onlineCount = data.filter(p => p.userPresenceType === 1).length;
-  const offlineCount = data.filter(p => p.userPresenceType === 0).length;
+  const onlineCount = data.userPresences.filter(p => p.userPresenceType === 1).length;
+  const offlineCount = data.userPresences.filter(p => p.userPresenceType === 0).length;
 
   const ctx = document.getElementById("chart");
   new Chart(ctx, {
