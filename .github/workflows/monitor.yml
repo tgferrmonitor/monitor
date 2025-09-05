@@ -2,7 +2,7 @@ name: Monitor Roblox
 
 on:
   schedule:
-    - cron: "*/5 * * * *" # roda a cada 5 minutos
+    - cron: "*/5 * * * *"
   workflow_dispatch:
 
 jobs:
@@ -15,7 +15,7 @@ jobs:
         with:
           node-version: 18
 
-      - run: npm install node-fetch@2 @aws-sdk/client-s3
+      - run: npm install
 
       - run: node monitor.js
         env:
@@ -26,3 +26,4 @@ jobs:
           S3_BUCKET: ${{ secrets.S3_BUCKET }}
           PLAYERS: ${{ secrets.PLAYERS }}
           TZ_OFFSET_MINUTES: ${{ secrets.TZ_OFFSET_MINUTES }}
+          ROBLOSECURITY: ${{ secrets.ROBLOSECURITY }}
