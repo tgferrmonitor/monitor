@@ -69,7 +69,7 @@ async function getUserPresence(userIds) {
 async function saveToS3(filename, data) {
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET,
-    Key: `reports/results_${filename}`,
+    Key: `results_${filename}`,
     Body: JSON.stringify(data, null, 2),
     ContentType: 'application/json',
   });
@@ -80,7 +80,7 @@ async function saveToS3(filename, data) {
     console.error('Erro ao enviar para S3:', err);
     throw err;
   }
-  console.log(`✅ Arquivo salvo no bucket como: reports/results_${filename}`);
+  console.log(`✅ Arquivo salvo no bucket como: results_${filename}`);
 }
 
 // Helper: read JSON object from S3 key, returns null if not exists
@@ -109,7 +109,7 @@ async function updateDailyHours(presenceData, minutesIncrement = 5) {
     const now = new Date();
     now.setMinutes(now.getMinutes() + TZ_OFFSET_MINUTES);
     const filename = `${formatDate(now)}.json`;
-    const key = `reports/hours_${filename}`;
+    const key = `hours_${filename}`;
 
     const existing = (await getJsonFromS3(key)) || {
       date: filename.replace('.json', ''),
