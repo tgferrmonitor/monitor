@@ -1,91 +1,220 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-<head>
-  <meta charset="UTF-8">
-  <title>Relatórios Roblox</title>
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <style>
-    body { font-family: sans-serif; margin: 20px; }
-    table { border-collapse: collapse; width: 100%; margin-top: 20px; }
-    th, td { border: 1px solid #ddd; padding: 8px; }
-    th { background: #f0f0f0; }
-  </style>
-</head>
-<body>
-  <h1>📊 Relatórios de Jogadores Roblox</h1>
+  <head>
+    <meta charset="UTF-8" />
+    <title>Relatórios Roblox</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+      body {
+        font-family: sans-serif;
+        margin: 20px;
+      }
+      .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        color: #fff;
+        font-weight: 600;
+      }
+      .badge.offline {
+        background: #9e9e9e;
+      }
+      .badge.online {
+        background: #4caf50;
+      }
+      .badge.ingame {
+        background: #2196f3;
+      }
+      .badge.instudio {
+        background: #ff9800;
+      }
+      .badge.invisible {
+        background: #607d8b;
+      }
+      table {
+        border-collapse: collapse;
+        width: 100%;
+        margin-top: 20px;
+      }
+      th,
+      td {
+        border: 1px solid #ddd;
+        padding: 8px;
+      }
+      th {
+        background: #f0f0f0;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>📊 Relatórios de Jogadores Roblox</h1>
 
-  <label>Data: <input type="date" id="dateInput"></label>
-  <button onclick="loadReport()">Carregar</button>
+    <label>Data: <input type="date" id="dateInput" /></label>
+    <button onclick="loadReport()">Carregar</button>
 
-  <div id="reportArea"></div>
-  <canvas id="chart" height="100"></canvas>
+    <div id="reportArea"></div>
+    <canvas id="chart" height="100"></canvas>
 
-<script>
-const BUCKET_URL = "https://bucket-tgferr-monitor.br-se1.magaluobjects.com/reports";
+    <script>
+      let BUCKET_URL =
+        "https://bucket-tgferr-monitor.br-se1.magaluobjects.com/reports";
 
-async function loadReport() {
-  const date = document.getElementById("dateInput").value;
-  if (!date) return alert("Escolha uma data!");
-  const url = `${BUCKET_URL}/${date}.json`;
-  try {
-    const res = await fetch(url);
-    if (!res.ok) throw new Error("Relatório não encontrado");
-    const data = await res.json();
-    renderReport(data);
-  } catch (e) {
-    alert("Erro: " + e.message);
-  }
-}
+      // Tenta carregar docs/config.json para sobrepor BUCKET_URL em desenvolvimento
+      let playersMap = new Map();
 
-function renderReport(data) {
-  const div = document.getElementById("reportArea");
-  div.innerHTML = "";
+      async function loadConfig() {
+        try {
+          const res = await fetch("./config.json");
+          if (!res.ok) return;
+          const cfg = await res.json();
+          if (cfg.BUCKET_URL) {
+            BUCKET_URL = cfg.BUCKET_URL;
+            console.log("Config carregada:", BUCKET_URL);
+          }
+        } catch (e) {
+          // silencioso - fallback mantém o BUCKET_URL embutido
+        }
+      }
 
-  if (!Array.isArray(data.userPresences) || data.userPresences.length === 0) {
-    div.innerHTML = "<p>Nenhum dado disponível para esta data.</p>";
-    return;
-  }
+      // Tenta carregar players.json local para mapear IDs -> nomes
+      async function loadPlayers() {
+        try {
+          const res = await fetch("./players.json");
+          if (!res.ok) return;
+          const list = await res.json();
+          for (const p of list) playersMap.set(String(p.id), p);
+          console.log("Players carregados localmente", playersMap.size);
+        } catch (e) {
+          // silencioso
+        }
+      }
 
-  let html = "<table><tr><th>User ID</th><th>Presença</th><th>Última Localização</th></tr>";
+      async function loadReport() {
+        const date = document.getElementById("dateInput").value;
+        if (!date) return alert("Escolha uma data!");
+        const url = `${BUCKET_URL}/${date}.json`;
+        try {
+          const res = await fetch(url);
+          if (!res.ok) throw new Error("Relatório não encontrado");
+          const data = await res.json();
+          // tenta também carregar relatório de horas (reports/hours/YYYY-MM-DD.json)
+          let hours = null;
+          try {
+            const hoursUrl = `${BUCKET_URL.replace(
+              /\/+$/,
+              ""
+            )}/hours/${date}.json`;
+            const hrsRes = await fetch(hoursUrl);
+            if (hrsRes.ok) hours = await hrsRes.json();
+          } catch (e) {
+            // ignore
+          }
 
-  for (const info of data.userPresences) {
-    const presenceText = info.userPresenceType === 0 ? "Offline" :
-                         info.userPresenceType === 1 ? "Online" : 
-                         "Desconhecido";
+          renderReport(data, hours);
+        } catch (e) {
+          alert("Erro: " + e.message);
+        }
+      }
 
-    html += `<tr>
-      <td>${info.userId}</td>
+      // Carrega config e players ao iniciar (não bloqueante)
+      loadConfig();
+      loadPlayers();
+
+      let chartInstance = null;
+
+      function renderReport(data, hoursData) {
+        const div = document.getElementById("reportArea");
+        div.innerHTML = "";
+
+        if (
+          !Array.isArray(data.userPresences) ||
+          data.userPresences.length === 0
+        ) {
+          div.innerHTML = "<p>Nenhum dado disponível para esta data.</p>";
+          return;
+        }
+
+        let html =
+          "<table><tr><th>Usuário</th><th>Presença</th><th>Última Localização</th><th>Horas hoje</th></tr>";
+
+        for (const info of data.userPresences) {
+          // Mapear presence types: 0=Offline,1=Online,2=InGame,3=InStudio,4=Invisible
+          const presenceMap = {
+            0: { text: "Offline", cls: "offline" },
+            1: { text: "Online", cls: "online" },
+            2: { text: "InGame", cls: "ingame" },
+            3: { text: "InStudio", cls: "instudio" },
+            4: { text: "Invisible", cls: "invisible" },
+          };
+          const p = presenceMap[info.userPresenceType] || {
+            text: "Desconhecido",
+            cls: "",
+          };
+          const presenceText = `<span class="badge ${p.cls}">${p.text}</span>`;
+
+          const user = playersMap.get(String(info.userId));
+          const title = user
+            ? `${user.displayName} (${user.name})`
+            : info.userId;
+
+          const hoursText =
+            hoursData &&
+            hoursData.hoursByUser &&
+            hoursData.hoursByUser[String(info.userId)]
+              ? hoursData.hoursByUser[String(info.userId)] + " h"
+              : "-";
+
+          html += `<tr>
+      <td>${title}<div style="font-size:0.9em;color:#666;">ID: ${
+            info.userId
+          }</div></td>
       <td>${presenceText}</td>
       <td>${info.lastLocation || "-"}</td>
+      <td style="text-align:center">${hoursText}</td>
     </tr>`;
-  }
+        }
 
-  html += "</table>";
-  div.innerHTML = html;
+        html += "</table>";
+        div.innerHTML = html;
 
-  // Gráfico simples - contagem online / offline
-  const onlineCount = data.userPresences.filter(p => p.userPresenceType === 1).length;
-  const offlineCount = data.userPresences.filter(p => p.userPresenceType === 0).length;
+        // Gráfico simples - contagem online / offline
+        const onlineCount = data.userPresences.filter(
+          (p) => p.userPresenceType === 1
+        ).length;
+        const offlineCount = data.userPresences.filter(
+          (p) => p.userPresenceType === 0
+        ).length;
 
-  const ctx = document.getElementById("chart");
-  new Chart(ctx, {
-    type: "bar",
-    data: {
-      labels: ["Online", "Offline"],
-      datasets: [{
-        label: "Número de jogadores",
-        data: [onlineCount, offlineCount],
-        backgroundColor: ["#4caf50", "#f44336"]
-      }]
-    },
-    options: {
-      scales: {
-        y: { beginAtZero: true, precision: 0 }
+        const ctx = document.getElementById("chart");
+        // Destrói instancia anterior do Chart.js para evitar erro "Canvas is already in use"
+        if (chartInstance) {
+          try {
+            chartInstance.destroy();
+          } catch (e) {
+            /* ignore */
+          }
+          chartInstance = null;
+        }
+
+        chartInstance = new Chart(ctx, {
+          type: "bar",
+          data: {
+            labels: ["Online", "Offline"],
+            datasets: [
+              {
+                label: "Número de jogadores",
+                data: [onlineCount, offlineCount],
+                backgroundColor: ["#4caf50", "#f44336"],
+              },
+            ],
+          },
+          options: {
+            scales: {
+              y: { beginAtZero: true, precision: 0 },
+            },
+          },
+        });
       }
-    }
-  });
-}
-
-</script>
-</body>
+    </script>
+  </body>
 </html>
