@@ -41,7 +41,7 @@ function renderReport(data) {
   const div = document.getElementById("reportArea");
   div.innerHTML = "";
 
-  if (!Array.isArray(data) || data.length === 0) {
+  if (!Array.isArray(data.userPresences) || data.userPresences.length === 0) {
     div.innerHTML = "<p>Nenhum dado disponível para esta data.</p>";
     return;
   }
