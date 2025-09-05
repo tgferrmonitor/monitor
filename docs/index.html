@@ -388,10 +388,14 @@
 
       // Ao carregar a página, preencher as datas (hoje) e players
       function setTodayInputs() {
-        const today = new Date();
+        // Usar o mesmo timezone offset que o backend (-180 minutos = GMT-3)
+        const TZ_OFFSET_MINUTES = -180;
+        const now = new Date();
+        now.setMinutes(now.getMinutes() + TZ_OFFSET_MINUTES);
+        
         const pad = (n) => n.toString().padStart(2, '0');
-        const iso = `${today.getFullYear()}-${pad(today.getMonth() + 1)}-${pad(
-          today.getDate()
+        const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+          now.getDate()
         )}`;
         document.getElementById('dateStart').value = iso;
         document.getElementById('dateEnd').value = iso;
