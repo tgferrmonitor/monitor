@@ -1,0 +1,28 @@
+name: Monitor Roblox
+
+on:
+  schedule:
+    - cron: "*/5 * * * *" # roda a cada 5 minutos
+  workflow_dispatch:
+
+jobs:
+  monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      - run: npm install node-fetch@2 @aws-sdk/client-s3
+
+      - run: node monitor.js
+        env:
+          S3_REGION: ${{ secrets.S3_REGION }}
+          S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
+          S3_KEY: ${{ secrets.S3_KEY }}
+          S3_SECRET: ${{ secrets.S3_SECRET }}
+          S3_BUCKET: ${{ secrets.S3_BUCKET }}
+          PLAYERS: ${{ secrets.PLAYERS }}
+          TZ_OFFSET_MINUTES: ${{ secrets.TZ_OFFSET_MINUTES }}
