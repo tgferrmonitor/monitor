@@ -82,7 +82,6 @@ async function saveToS3(filename, data) {
 }
 
 // Helper: read JSON object from S3 key, returns null if not exists
-// Helper: read JSON object from S3 key, returns null if not exists
 async function getJsonFromS3(key) {
   try {
     const res = await s3Client.send(
