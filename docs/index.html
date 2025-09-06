@@ -19,8 +19,7 @@
         </div>
 
         <div class="controls">
-          <label>Data Início: <input type="date" id="dateStart" /></label>
-          <label>Data Fim: <input type="date" id="dateEnd" /></label>
+          <label>Data: <input type="date" id="date" /></label>
           <label
             >Jogador:
             <select id="playerFilter">
@@ -75,6 +74,12 @@
       function convertToDDMMYYYY(isoDate) {
         const [year, month, day] = isoDate.split('-');
         return `${day}-${month}-${year}`;
+      }
+
+      // Parse ISO 'YYYY-MM-DD' into local Date (avoid UTC shift)
+      function parseISOToLocalDate(iso) {
+        const [y, m, d] = iso.split('-').map((s) => parseInt(s, 10));
+        return new Date(y, m - 1, d);
       }
 
       async function loadConfig() {
@@ -156,63 +161,43 @@
         return null;
       }
 
-      // Agrega horas ao longo do intervalo selecionado
-      async function aggregateHoursForRange(start, end) {
-        const startDate = new Date(start);
-        const endDate = new Date(end);
+      // Agrega horas para uma única data (usa fetchHoursForDate internamente)
+      async function aggregateHoursForDate(iso) {
         const minutesByUser = {};
-
-        for (
-          let d = new Date(startDate);
-          d <= endDate;
-          d.setDate(d.getDate() + 1)
-        ) {
-          const pad = (n) => n.toString().padStart(2, '0');
-          const key = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(
-            d.getDate() + 1)}`;
-          try {
-            const hours = await fetchHoursForDate(key);
-            if (hours && hours.minutesByUser) {
-              for (const [uid, mins] of Object.entries(hours.minutesByUser)) {
-                minutesByUser[uid] = (minutesByUser[uid] || 0) + mins;
-              }
+        try {
+          const hours = await fetchHoursForDate(iso);
+          if (hours && hours.minutesByUser) {
+            for (const [uid, mins] of Object.entries(hours.minutesByUser)) {
+              minutesByUser[uid] = (minutesByUser[uid] || 0) + mins;
             }
-          } catch (e) {
-            // continua
           }
+        } catch (e) {
+          // continua
         }
 
-        // montar objeto conveniência hoursByUser
         const hoursByUser = {};
         for (const [uid, mins] of Object.entries(minutesByUser)) {
           hoursByUser[uid] = Math.round((mins / 60) * 100) / 100;
         }
-
         return { minutesByUser, hoursByUser };
       }
 
       // Carrega relatório para um dia (exibe presenças do primeiro dia) e agrega horas no intervalo
       async function loadReport() {
-        const start = document.getElementById('dateStart').value;
-        const end = document.getElementById('dateEnd').value;
-        if (!start || !end) return alert('Escolha data início e fim!');
-        const startDate = new Date(start);
-        const endDate = new Date(end);
-        if (startDate > endDate)
-          return alert('Data início deve ser <= data fim');
+        const dateIso = document.getElementById('date').value;
+        if (!dateIso) return alert('Escolha uma data!');
 
         // filtro por jogador (opcional)
         const playerFilter = document.getElementById('playerFilter').value;
 
-        // Mostrar presenças do dia inicial (mantendo compatibilidade)
-        const date = convertToDDMMYYYY(start);
+        const date = convertToDDMMYYYY(dateIso);
         const url = `${BUCKET_URL.replace(/\/+$/, '')}/results_${date}.json`;
         try {
           const res = await fetch(url);
           if (!res.ok) throw new Error('Relatório não encontrado');
           const data = await res.json();
 
-          const aggregatedHours = await aggregateHoursForRange(start, end);
+          const aggregatedHours = await aggregateHoursForDate(dateIso);
 
           // aplicar filtro por jogador (se houver)
           if (playerFilter) {
@@ -256,10 +241,25 @@
         // criar cópia para ordenação
         let presList = Array.from(data.userPresences || []);
 
-        // auxiliar: obter horas do aggregated hoursData
+        // auxiliar: obter horas/minutos do aggregated hoursData
         const getHours = (uid) =>
           (hoursData && hoursData.hoursByUser && hoursData.hoursByUser[uid]) ||
           0;
+        const getMinutes = (uid) =>
+          (hoursData &&
+            hoursData.minutesByUser &&
+            hoursData.minutesByUser[uid]) ||
+          (hoursData &&
+            hoursData.hoursByUser &&
+            Math.round(hoursData.hoursByUser[uid] * 60)) ||
+          0;
+
+        function formatMinutesHMM(mins) {
+          if (typeof mins !== 'number' || isNaN(mins)) return '-';
+          const h = Math.floor(mins / 60);
+          const m = mins % 60;
+          return `${h}:${String(m).padStart(2, '0')}`;
+        }
 
         presList.sort((a, b) => {
           if (sortBy === 'hours') {
@@ -305,12 +305,10 @@
             ? `${user.displayName} (${user.name})`
             : info.userId;
 
-          const hoursText =
-            hoursData &&
-            hoursData.hoursByUser &&
-            hoursData.hoursByUser[String(info.userId)]
-              ? hoursData.hoursByUser[String(info.userId)] + ' h'
-              : '-';
+          // Mostrar como H:MM usando minutesByUser quando disponível
+          const uidStr = String(info.userId);
+          const mins = getMinutes(uidStr);
+          const hoursText = mins > 0 ? formatMinutesHMM(mins) : '-';
 
           html += `<tr>
       <td>${title}<div style="font-size:0.9em;color:#666;">ID: ${
@@ -407,8 +405,13 @@
         const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
           now.getDate()
         )}`;
-        document.getElementById('dateStart').value = iso;
-        document.getElementById('dateEnd').value = iso;
+        document.getElementById('date').value = iso;
+        // carregar imediatamente para conveniência
+        try {
+          loadReport();
+        } catch (e) {
+          /* ignore */
+        }
       }
 
       // Export CSV da tabela atual
@@ -428,7 +431,7 @@
         const a = document.createElement('a');
         a.href = url;
         a.download = `report-${
-          document.getElementById('dateStart').value || 'report'
+          document.getElementById('date').value || 'report'
         }.csv`;
         a.click();
         URL.revokeObjectURL(url);
