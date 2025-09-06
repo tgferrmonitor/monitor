@@ -67,6 +67,9 @@
     <script>
       let BUCKET_URL =
         'https://bucket-tgferr-monitor.br-se1.magaluobjects.com/';
+      // Opcional: URL para consultar a data do servidor (ex: http://host:3001/server-date)
+      // Pode ser definida em docs/config.json como SERVER_DATE_URL para ambientes distribuídos.
+      let SERVER_DATE_URL = null;
 
       // Tenta carregar docs/config.json para sobrepor BUCKET_URL em desenvolvimento
       let playersMap = new Map();
@@ -104,6 +107,10 @@
           if (cfg.BUCKET_URL) {
             BUCKET_URL = cfg.BUCKET_URL;
             console.log('Config carregada (dev):', BUCKET_URL);
+          }
+          if (cfg.SERVER_DATE_URL) {
+            SERVER_DATE_URL = cfg.SERVER_DATE_URL.replace(/\/+$/, '');
+            console.log('SERVER_DATE_URL (dev):', SERVER_DATE_URL);
           }
         } catch (e) {
           // silencioso - manter fallback embutido
@@ -162,24 +169,91 @@
       }
 
       // Agrega horas para uma única data (usa fetchHoursForDate internamente)
+      // Com fallback robusto: tenta várias datas candidatas e opcionalmente
+      // consulta SERVER_DATE_URL para obter a data exata do backend.
       async function aggregateHoursForDate(iso) {
-        const minutesByUser = {};
+        const candidates = [];
+        // data cliente
+        candidates.push(iso);
+
+        // tentar aplicar um offset padrão do backend (padrão -180 minutos) - pode ser sobrescrito em config
+        const DEFAULT_BACKEND_TZ_MIN = -180;
+        const backendOffsetMin =
+          window.__BACKEND_TZ_MINUTES || DEFAULT_BACKEND_TZ_MIN;
+
+        // construir data com offset aplicada
         try {
-          const hours = await fetchHoursForDate(iso);
-          if (hours && hours.minutesByUser) {
-            for (const [uid, mins] of Object.entries(hours.minutesByUser)) {
-              minutesByUser[uid] = (minutesByUser[uid] || 0) + mins;
-            }
-          }
+          const d = parseISOToLocalDate(iso);
+          d.setMinutes(d.getMinutes() + backendOffsetMin);
+          const iso2 = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+            2,
+            '0'
+          )}-${String(d.getDate()).padStart(2, '0')}`;
+          if (!candidates.includes(iso2)) candidates.push(iso2);
         } catch (e) {
-          // continua
+          /* ignore */
         }
 
-        const hoursByUser = {};
-        for (const [uid, mins] of Object.entries(minutesByUser)) {
-          hoursByUser[uid] = Math.round((mins / 60) * 100) / 100;
+        // ontem (fazer fallback para previous day)
+        try {
+          const d = parseISOToLocalDate(iso);
+          d.setDate(d.getDate() - 1);
+          const isoY = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
+            2,
+            '0'
+          )}-${String(d.getDate()).padStart(2, '0')}`;
+          if (!candidates.includes(isoY)) candidates.push(isoY);
+        } catch (e) {
+          /* ignore */
         }
-        return { minutesByUser, hoursByUser };
+
+        // se SERVER_DATE_URL configurada, consultar e adicionar ao candidates (por último)
+        if (SERVER_DATE_URL) {
+          try {
+            const res = await fetch(`${SERVER_DATE_URL}`);
+            if (res.ok) {
+              const json = await res.json();
+              if (json && json.date) {
+                // backend fornece date como DD-MM-YYYY
+                const parts = String(json.date).split('-');
+                if (parts.length === 3) {
+                  const isoServer = `${parts[2]}-${parts[1].padStart(
+                    2,
+                    '0'
+                  )}-${parts[0].padStart(2, '0')}`;
+                  if (!candidates.includes(isoServer))
+                    candidates.push(isoServer);
+                }
+              }
+            }
+          } catch (e) {
+            console.log('Erro ao consultar SERVER_DATE_URL:', e && e.message);
+          }
+        }
+
+        const minutesByUser = {};
+
+        for (const c of candidates) {
+          try {
+            const hours = await fetchHoursForDate(c);
+            if (hours && hours.minutesByUser) {
+              for (const [uid, mins] of Object.entries(hours.minutesByUser)) {
+                minutesByUser[uid] = (minutesByUser[uid] || 0) + mins;
+              }
+              // sucesso: retornar agregação com o que foi encontrado (parar no primeiro arquivo válido)
+              const hoursByUser = {};
+              for (const [uid, mins] of Object.entries(minutesByUser)) {
+                hoursByUser[uid] = Math.round((mins / 60) * 100) / 100;
+              }
+              return { minutesByUser, hoursByUser };
+            }
+          } catch (e) {
+            // continua para próximo candidato
+          }
+        }
+
+        // nada encontrado: retornar vazio
+        return { minutesByUser: {}, hoursByUser: {} };
       }
 
       // Carrega relatório para um dia (exibe presenças do primeiro dia) e agrega horas no intervalo
@@ -396,10 +470,9 @@
 
       // Ao carregar a página, preencher as datas (hoje) e players
       function setTodayInputs() {
-        // Usar o mesmo timezone offset que o backend (-180 minutos = GMT-3)
-        const TZ_OFFSET_MINUTES = -180;
+        // Usa a data local do cliente; o frontend aplicará fallback caso o
+        // backend esteja gravando com outro timezone (SERVER_DATE_URL pode ajudar).
         const now = new Date();
-        // now.setMinutes(now.getMinutes() + TZ_OFFSET_MINUTES);
 
         const pad = (n) => n.toString().padStart(2, '0');
         const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
