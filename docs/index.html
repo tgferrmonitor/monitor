@@ -181,15 +181,13 @@
           }
 
           // Cada entrada = +5 minutos
-
-          // Cada entrada = +5 minutos
           stats[player].totalMinutes += 5;
+          // Obter status da entrada
+          const status = entry.status || 'Desconhecido';
           // Acumular minutos por status
           stats[player].minutesByStatus[status] =
             (stats[player].minutesByStatus[status] || 0) + 5;
-
           // Contar status
-          const status = entry.status || 'Desconhecido';
           stats[player].statusCount[status] =
             (stats[player].statusCount[status] || 0) + 1;
 
