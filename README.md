@@ -28,7 +28,6 @@ ROBLOSECURITY=SuaRobloxSecurityCookie
 PLAYERS=[12345,67890]
 S3_REGION=br-se1
 S3_ENDPOINT=https://bucket-tgferr-monitor.br-se1.magaluobjects.com
-S3_BUCKET=nome-do-bucket
 S3_KEY=SEU_ACCESS_KEY
 S3_SECRET=SEU_SECRET_KEY
 TZ_OFFSET_MINUTES=0
