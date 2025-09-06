@@ -162,51 +162,60 @@
         return [];
       }
 
-      // Calcula estatísticas por player baseado nas entradas (cada entrada = 5min)
+      // Calcula estatísticas por player baseado nos timestamps das entradas
       function calculatePlayerStats(dailyData) {
         const stats = {};
-
+        // Agrupar entradas por player
+        const entriesByPlayer = {};
         for (const entry of dailyData) {
           const player = entry.player;
-          if (!stats[player]) {
-            stats[player] = {
-              totalMinutes: 0,
-              statusCount: {},
-              minutesByStatus: {},
-              gameCount: {},
-              lastStatus: null,
-              lastGame: null,
-              lastTimestamp: null,
-            };
-          }
-
-          // Cada entrada = +5 minutos
-          stats[player].totalMinutes += 5;
-          // Obter status da entrada
-          const status = entry.status || 'Desconhecido';
-          // Acumular minutos por status
-          stats[player].minutesByStatus[status] =
-            (stats[player].minutesByStatus[status] || 0) + 5;
-          // Contar status
-          stats[player].statusCount[status] =
-            (stats[player].statusCount[status] || 0) + 1;
-
-          // Contar jogos
-          const game = entry.jogo || 'N/A';
-          stats[player].gameCount[game] =
-            (stats[player].gameCount[game] || 0) + 1;
-
-          // Guardar último status/jogo
-          if (
-            !stats[player].lastTimestamp ||
-            entry.timestamp > stats[player].lastTimestamp
-          ) {
-            stats[player].lastStatus = status;
-            stats[player].lastGame = game;
-            stats[player].lastTimestamp = entry.timestamp;
+          if (!entriesByPlayer[player]) entriesByPlayer[player] = [];
+          entriesByPlayer[player].push(entry);
+        }
+        // Processar cada player separadamente
+        for (const player in entriesByPlayer) {
+          const entries = entriesByPlayer[player];
+          // Ordenar por timestamp ascendente
+          entries.sort((a, b) => a.timestamp - b.timestamp);
+          // Inicializar stats para o player
+          stats[player] = {
+            totalMinutes: 0,
+            statusCount: {},
+            minutesByStatus: {},
+            gameCount: {},
+            lastStatus: null,
+            lastGame: null,
+            lastTimestamp: null,
+          };
+          let prevEntry = null;
+          for (const entry of entries) {
+            if (prevEntry) {
+              const diffMs = entry.timestamp - prevEntry.timestamp;
+              const diffMin = diffMs / 1000 / 60;
+              stats[player].totalMinutes += diffMin;
+              // Acumular minutos por status anterior
+              const prevStatus = prevEntry.status || 'Desconhecido';
+              stats[player].minutesByStatus[prevStatus] =
+                (stats[player].minutesByStatus[prevStatus] || 0) + diffMin;
+              stats[player].statusCount[prevStatus] =
+                (stats[player].statusCount[prevStatus] || 0) + 1;
+              // Contar jogos anteriores
+              const prevGame = prevEntry.jogo || 'N/A';
+              stats[player].gameCount[prevGame] =
+                (stats[player].gameCount[prevGame] || 0) + 1;
+            }
+            // Atualizar último status/jogo
+            if (
+              !stats[player].lastTimestamp ||
+              entry.timestamp > stats[player].lastTimestamp
+            ) {
+              stats[player].lastStatus = entry.status || 'Desconhecido';
+              stats[player].lastGame = entry.jogo || 'N/A';
+              stats[player].lastTimestamp = entry.timestamp;
+            }
+            prevEntry = entry;
           }
         }
-
         return stats;
       }
 
