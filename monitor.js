@@ -42,6 +42,57 @@ const PLAYERS = JSON.parse(process.env.PLAYERS || '[]');
 const ROBLOSECURITY = process.env.ROBLOSECURITY;
 const TZ_OFFSET_MINUTES = parseInt(process.env.TZ_OFFSET_MINUTES || '0', 10);
 
+// Carregar mapeamento de players de arquivo local (se existir)
+let playersMap = new Map();
+try {
+  const fs = await import('fs/promises');
+  const playersData = await fs.readFile('./players.json', 'utf8');
+  const parsed = JSON.parse(playersData);
+
+  // Se tem formato com array de objetos {id, name}
+  if (parsed.players && Array.isArray(parsed.players)) {
+    for (const player of parsed.players) {
+      if (typeof player === 'object' && player.id && player.name) {
+        playersMap.set(String(player.id), player.name);
+      }
+    }
+  }
+  console.log(`📝 Mapeamento de players carregado: ${playersMap.size} players`);
+} catch (err) {
+  console.log(
+    'ℹ️ Arquivo players.json não encontrado ou inválido, usando IDs como nomes'
+  );
+}
+
+function getPlayerName(userId) {
+  return playersMap.get(String(userId)) || `Player ${userId}`;
+}
+
+// Validação simples de ambiente para evitar mensagens crípticas do SDK
+function validateS3Env() {
+  const missing = [];
+  if (!process.env.S3_BUCKET) missing.push('S3_BUCKET');
+  if (!process.env.S3_KEY) missing.push('S3_KEY');
+  if (!process.env.S3_SECRET) missing.push('S3_SECRET');
+  if (missing.length > 0) {
+    console.error(
+      `❌ Variáveis de ambiente faltando: ${missing.join(', ')}. ` +
+        'Defina-as no .env ou no ambiente antes de executar.'
+    );
+    // lançar erro para virar falha rápida; facilitamos debugging em CI
+    throw new Error(
+      'Missing required S3 environment variables: ' + missing.join(', ')
+    );
+  }
+}
+
+try {
+  validateS3Env();
+} catch (err) {
+  console.error('Aborting due to missing configuration.');
+  process.exit(1);
+}
+
 // ...existing code...
 
 async function getUserPresence(userIds) {
@@ -68,134 +119,74 @@ async function getUserPresence(userIds) {
   return res.json();
 }
 
-async function saveToS3(filename, data) {
+async function saveDailyData(filename, presenceData) {
+  // Buscar dados existentes do dia
+  let existingData = [];
+  try {
+    const existing = await s3Client.send(
+      new GetObjectCommand({ Bucket: process.env.S3_BUCKET, Key: filename })
+    );
+    const stream = existing.Body;
+    const chunks = [];
+    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+    const text = Buffer.concat(chunks).toString('utf8');
+    existingData = JSON.parse(text) || [];
+  } catch (err) {
+    if (err.name !== 'NoSuchKey') {
+      console.error('Erro ao ler dados existentes:', err);
+    }
+    // Se arquivo não existe, continuar com array vazio
+  }
+
+  // Mapear status codes para strings legíveis
+  const statusMap = {
+    0: 'Offline',
+    1: 'Online',
+    2: 'Jogando',
+    3: 'No Studio',
+    4: 'Invisível',
+  };
+
+  // Adicionar novas entradas (cada execução = +5 minutos por player ativo)
+  for (const info of presenceData.userPresences || []) {
+    // Buscar nome do player usando mapeamento
+    const playerName = getPlayerName(info.userId);
+    const status = statusMap[info.userPresenceType] || 'Desconhecido';
+    const jogo = info.lastLocation || 'N/A';
+
+    // Adicionar entrada (cada linha = +5 minutos para esse player/status)
+    existingData.push({
+      player: playerName,
+      status: status,
+      jogo: jogo,
+      timestamp: new Date().toISOString(),
+    });
+  }
+
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET,
-    Key: `results_${filename}`,
-    Body: JSON.stringify(data, null, 2),
+    Key: filename,
+    Body: JSON.stringify(existingData, null, 2),
     ContentType: 'application/json',
   });
 
   try {
     await s3Client.send(command);
+    console.log(
+      `✅ Dados salvos: ${filename} (${existingData.length} entradas)`
+    );
   } catch (err) {
     console.error('Erro ao enviar para S3:', err);
     throw err;
   }
-  console.log(`✅ Arquivo salvo no bucket como: results_${filename}`);
 }
 
-// Helper: read JSON object from S3 key, returns null if not exists
-async function getJsonFromS3(key) {
-  try {
-    const res = await s3Client.send(
-      new GetObjectCommand({ Bucket: process.env.S3_BUCKET, Key: key })
-    );
-    const stream = res.Body;
-    const chunks = [];
-    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
-    const text = Buffer.concat(chunks).toString('utf8');
-    return JSON.parse(text);
-  } catch (err) {
-    if (err.name === 'NoSuchKey') {
-      return null;
-    }
-    console.error('Erro ao ler S3:', err);
-    throw err;
-  }
-}
-
-// Atualiza relatório diário de horas: incrementa N minutos (padrão 5) para usuários ativos
-async function updateDailyHours(presenceData, minutesIncrement = 5) {
-  try {
-    const now = new Date();
-    now.setMinutes(now.getMinutes() + TZ_OFFSET_MINUTES);
-    const filename = `${formatDate(now)}.json`;
-    const key = `hours_${filename}`;
-
-    const existing = (await getJsonFromS3(key)) || {
-      date: filename.replace('.json', ''),
-      minutesByUser: {},
-      lastUpdatedAt: null,
-    };
-
-    const activeTypes = new Set([1, 2, 3]); // Online, InGame, InStudio considered active
-
-    // Evita duplicação: se o arquivo foi atualizado recentemente (menos que windowMinutes), não incrementa
-    const windowMinutes = 4; // tolerância menor que 5min cron
-    if (existing.lastUpdatedAt) {
-      const last = new Date(existing.lastUpdatedAt);
-      const diffMin = (now - last) / (1000 * 60);
-      if (diffMin < windowMinutes) {
-        console.log(
-          `⚠️ Ignorando incremento: última atualização há ${diffMin.toFixed(
-            2
-          )} minutos (< ${windowMinutes})`
-        );
-        // Regrava para atualizar hoursByUser field
-        const hoursByUser = {};
-        for (const [uid, mins] of Object.entries(existing.minutesByUser)) {
-          hoursByUser[uid] = Math.round((mins / 60) * 100) / 100;
-        }
-        const payload = {
-          date: existing.date,
-          minutesByUser: existing.minutesByUser,
-          hoursByUser,
-          lastUpdatedAt: existing.lastUpdatedAt,
-        };
-        await s3Client.send(
-          new PutObjectCommand({
-            Bucket: process.env.S3_BUCKET,
-            Key: key,
-            Body: JSON.stringify(payload, null, 2),
-            ContentType: 'application/json',
-          })
-        );
-        console.log(`ℹ️ Regravado relatório diário sem incremento: ${key}`);
-        return;
-      }
-    }
-
-    for (const info of presenceData.userPresences || []) {
-      const userId = String(info.userId);
-      if (activeTypes.has(info.userPresenceType)) {
-        existing.minutesByUser[userId] =
-          (existing.minutesByUser[userId] || 0) + minutesIncrement;
-      }
-    }
-
-    // Also compute hours convenience field (rounded to 2 decimals)
-    const hoursByUser = {};
-    for (const [uid, mins] of Object.entries(existing.minutesByUser)) {
-      hoursByUser[uid] = Math.round((mins / 60) * 100) / 100;
-    }
-
-    const payload = {
-      date: existing.date,
-      minutesByUser: existing.minutesByUser,
-      hoursByUser,
-      lastUpdatedAt: now.toISOString(),
-    };
-
-    await s3Client.send(
-      new PutObjectCommand({
-        Bucket: process.env.S3_BUCKET,
-        Key: key,
-        Body: JSON.stringify(payload, null, 2),
-        ContentType: 'application/json',
-      })
-    );
-    console.log(`✅ Relatório diário de horas atualizado: ${key}`);
-  } catch (err) {
-    console.error('Erro ao atualizar relatório diário de horas:', err);
-  }
-}
+// Funções auxiliares removidas - usando abordagem simplificada
 
 function formatDate(date) {
   const pad = (n) => n.toString().padStart(2, '0');
-  return `${pad(date.getDate())}-${pad(
-    date.getMonth() + 1
-  )}-${date.getFullYear()}`;
+  const year = date.getFullYear().toString().slice(-2); // YY format
+  return `${pad(date.getDate())}${pad(date.getMonth() + 1)}${year}`;
 }
 
 async function main() {
@@ -209,9 +200,10 @@ async function main() {
     now.setMinutes(now.getMinutes() + TZ_OFFSET_MINUTES);
     const filename = `${formatDate(now)}.json`;
 
-    await saveToS3(filename, presence);
-    // Atualiza o relatório diário de horas (incremento por execução do cron)
-    await updateDailyHours(presence, 5);
+    // Salvar dados diários no formato simplificado
+    await saveDailyData(filename, presence);
+
+    console.log(`✅ Processamento concluído para ${filename}`);
   } catch (error) {
     console.error('❌ Erro no monitor:', error);
   }
@@ -228,9 +220,9 @@ if (process.env.EXPOSE_SERVER_DATE === '1') {
     if (req.method === 'GET' && req.url === '/server-date') {
       const now = new Date();
       now.setMinutes(now.getMinutes() + TZ_OFFSET_MINUTES);
-      const filename = `${formatDate(now)}`;
+      const filename = `${formatDate(now)}.json`;
       res.writeHead(200, { 'Content-Type': 'application/json' });
-      res.end(JSON.stringify({ date: filename }));
+      res.end(JSON.stringify({ filename: filename, date: formatDate(now) }));
       return;
     }
     res.writeHead(404, { 'Content-Type': 'application/json' });
