@@ -165,6 +165,10 @@
       // Calcula estatísticas por player baseado nos timestamps das entradas
       function calculatePlayerStats(dailyData) {
         const stats = {};
+        // Converter timestamps para ms numéricos uma vez
+        dailyData.forEach((entry) => {
+          entry._ts = Date.parse(entry.timestamp);
+        });
         // Agrupar entradas por player
         const entriesByPlayer = {};
         for (const entry of dailyData) {
@@ -175,8 +179,8 @@
         // Processar cada player separadamente
         for (const player in entriesByPlayer) {
           const entries = entriesByPlayer[player];
-          // Ordenar por timestamp ascendente
-          entries.sort((a, b) => a.timestamp - b.timestamp);
+          // Ordenar por timestamp ascendente usando _ts
+          entries.sort((a, b) => a._ts - b._ts);
           // Inicializar stats para o player
           stats[player] = {
             totalMinutes: 0,
@@ -190,19 +194,23 @@
           let prevEntry = null;
           for (const entry of entries) {
             if (prevEntry) {
-              const diffMs = entry.timestamp - prevEntry.timestamp;
-              const diffMin = diffMs / 1000 / 60;
-              stats[player].totalMinutes += diffMin;
-              // Acumular minutos por status anterior
-              const prevStatus = prevEntry.status || 'Desconhecido';
-              stats[player].minutesByStatus[prevStatus] =
-                (stats[player].minutesByStatus[prevStatus] || 0) + diffMin;
-              stats[player].statusCount[prevStatus] =
-                (stats[player].statusCount[prevStatus] || 0) + 1;
-              // Contar jogos anteriores
-              const prevGame = prevEntry.jogo || 'N/A';
-              stats[player].gameCount[prevGame] =
-                (stats[player].gameCount[prevGame] || 0) + 1;
+              // calcular diferença real entre timestamps usando _ts
+              const diffMs = entry._ts - prevEntry._ts;
+              // só acumular se diffMs for número válido
+              if (Number.isFinite(diffMs) && diffMs > 0) {
+                const diffMin = diffMs / 1000 / 60;
+                stats[player].totalMinutes += diffMin;
+                // Acumular minutos por status anterior
+                const prevStatus = prevEntry.status || 'Desconhecido';
+                stats[player].minutesByStatus[prevStatus] =
+                  (stats[player].minutesByStatus[prevStatus] || 0) + diffMin;
+                stats[player].statusCount[prevStatus] =
+                  (stats[player].statusCount[prevStatus] || 0) + 1;
+                // Contar jogos anteriores
+                const prevGame = prevEntry.jogo || 'N/A';
+                stats[player].gameCount[prevGame] =
+                  (stats[player].gameCount[prevGame] || 0) + 1;
+              }
             }
             // Atualizar último status/jogo
             if (
@@ -270,14 +278,6 @@
 
         // Converter stats para array ordenável
         const players = Object.keys(playerStats);
-        // Lista fixa de status para colunas
-        const statuses = [
-          'Offline',
-          'Online',
-          'Jogando',
-          'No Studio',
-          'Invisível',
-        ];
         const sortBy = document.getElementById('sortBy')?.value || 'hours';
         const sortDir = document.getElementById('sortDir')?.value || 'desc';
 
@@ -288,38 +288,39 @@
               (sortDir === 'asc' ? -1 : 1)
             );
           } else {
-            // ordenar por nome do player
             return a.localeCompare(b) * (sortDir === 'asc' ? 1 : -1);
           }
         });
 
-        // Formatador de tempo
-        function formatMinutesHMM(mins) {
-          if (typeof mins !== 'number' || isNaN(mins)) return '-';
-          const h = Math.floor(mins / 60);
-          const m = mins % 60;
-          return `${h}:${String(m).padStart(2, '0')}`;
+        // Formatador de duração a partir de minutos flutuantes
+        function formatDuration(mins) {
+          const totalMs = mins * 60 * 1000;
+          const totalSec = totalMs / 1000;
+          const days = Math.floor(totalSec / 86400);
+          let rem = totalSec % 86400;
+          const hours = Math.floor(rem / 3600);
+          rem = rem % 3600;
+          const minutes = Math.floor(rem / 60);
+          const seconds = rem % 60;
+          const secStr = seconds.toFixed(6).padStart(9, '0');
+          return `${days} dias ${String(hours).padStart(2, '0')}:${String(
+            minutes
+          ).padStart(2, '0')}:${secStr}`;
         }
 
-        // Construir tabela com colunas por status
+        // Construir tabela por player e status
         let html =
-          '<table><tr><th>Player</th>' +
-          statuses.map((s) => `<th>${s}</th>`).join('') +
-          '</tr>';
-
+          '<table><tr><th>Player</th><th>Status</th><th>Duração</th></tr>';
         for (const player of players) {
           const stats = playerStats[player];
-          html += `<tr><td><strong>${player}</strong></td>`;
-          // preencher colunas de status
-          for (const s of statuses) {
-            const mins = stats.minutesByStatus?.[s] || 0;
-            html += `<td style="text-align:center">${formatMinutesHMM(
+          const statuses = Object.keys(stats.minutesByStatus || {});
+          for (const status of statuses) {
+            const mins = stats.minutesByStatus[status] || 0;
+            html += `<tr><td>${player}</td><td>${status}</td><td>${formatDuration(
               mins
-            )}</td>`;
+            )}</td></tr>`;
           }
-          html += '</tr>';
         }
-
         html += '</table>';
         div.innerHTML = html;
 
@@ -327,7 +328,7 @@
         const info = document.createElement('div');
         info.className = 'muted';
         info.style.marginTop = '10px';
-        info.textContent = `${players.length} players • ${dailyData.length} entradas total • Cada entrada = 5 minutos`;
+        info.textContent = `${players.length} players • ${dailyData.length} entradas total`;
         div.appendChild(info);
 
         // Atualizar gráfico
