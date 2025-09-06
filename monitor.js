@@ -10,6 +10,8 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
+import http from 'http';
+
 // Se precisar ignorar certificados self-signed em desenvolvimento, ative a
 // flag ALLOW_SELF_SIGNED=1 ao rodar o script. Isso definirá
 // NODE_TLS_REJECT_UNAUTHORIZED=0 para o processo (apenas local/dev).
@@ -216,3 +218,28 @@ async function main() {
 }
 
 main();
+
+// Opcional: expor um endpoint mínimo que retorna a data que o backend usa
+// para nomear os arquivos (útil para clientes sincronizarem timezone).
+// Para ativar, defina EXPOSE_SERVER_DATE=1 no ambiente.
+if (process.env.EXPOSE_SERVER_DATE === '1') {
+  const port = parseInt(process.env.SERVER_DATE_PORT || '3001', 10);
+  const server = http.createServer((req, res) => {
+    if (req.method === 'GET' && req.url === '/server-date') {
+      const now = new Date();
+      now.setMinutes(now.getMinutes() + TZ_OFFSET_MINUTES);
+      const filename = `${formatDate(now)}`;
+      res.writeHead(200, { 'Content-Type': 'application/json' });
+      res.end(JSON.stringify({ date: filename }));
+      return;
+    }
+    res.writeHead(404, { 'Content-Type': 'application/json' });
+    res.end(JSON.stringify({ error: 'not_found' }));
+  });
+
+  server.listen(port, () =>
+    console.log(
+      `🔁 Server-date endpoint listening on http://0.0.0.0:${port}/server-date`
+    )
+  );
+}
