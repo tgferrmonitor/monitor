@@ -1,0 +1,26 @@
+[
+  {
+    "player": "Player 123456",
+    "status": "Jogando",
+    "jogo": "Demonologia",
+    "timestamp": "2025-09-06T14:00:00Z"
+  },
+  {
+    "player": "Player 123456",
+    "status": "Jogando",
+    "jogo": "Demonologia",
+    "timestamp": "2025-09-06T14:05:00Z"
+  },
+  {
+    "player": "Player 789012",
+    "status": "Online",
+    "jogo": "Website",
+    "timestamp": "2025-09-06T14:00:00Z"
+  },
+  {
+    "player": "Player 123456",
+    "status": "Jogando",
+    "jogo": "Outro Jogo",
+    "timestamp": "2025-09-06T14:10:00Z"
+  }
+]

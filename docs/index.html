@@ -65,458 +65,341 @@
     </div>
 
     <script>
-      let BUCKET_URL =
-        'https://bucket-tgferr-monitor.br-se1.magaluobjects.com/';
-      // Opcional: URL para consultar a data do servidor (ex: http://host:3001/server-date)
-      // Pode ser definida em docs/config.json como SERVER_DATE_URL para ambientes distribuídos.
-      let SERVER_DATE_URL = null;
+            let BUCKET_URL =
+              'https://bucket-tgferr-monitor.br-se1.magaluobjects.com/bucket-tgferr-monitor';
+            // Opcional: URL para consultar a data do servidor (ex: http://host:3001/server-date)
+            // Pode ser definida em docs/config.json como SERVER_DATE_URL para ambientes distribuídos.
+            let SERVER_DATE_URL = null;
 
-      // Tenta carregar docs/config.json para sobrepor BUCKET_URL em desenvolvimento
-      let playersMap = new Map();
+            // Tenta carregar docs/config.json para sobrepor BUCKET_URL em desenvolvimento
+            let playersMap = new Map();
 
-      function convertToDDMMYYYY(isoDate) {
-        const [year, month, day] = isoDate.split('-');
-        return `${day}-${month}-${year}`;
-      }
-
-      // Parse ISO 'YYYY-MM-DD' into local Date (avoid UTC shift)
-      function parseISOToLocalDate(iso) {
-        const [y, m, d] = iso.split('-').map((s) => parseInt(s, 10));
-        return new Date(y, m - 1, d);
-      }
-
-      async function loadConfig() {
-        // Apenas carregar config.json em desenvolvimento (localhost / 127.0.0.1 / file:)
-        try {
-          const host =
-            (typeof location !== 'undefined' && location.hostname) || '';
-          const proto =
-            (typeof location !== 'undefined' && location.protocol) || '';
-          if (
-            host !== 'localhost' &&
-            host !== '127.0.0.1' &&
-            proto !== 'file:'
-          ) {
-            // em produção (GitHub Pages) não carregamos o config local
-            return;
-          }
-
-          const res = await fetch('./config.json');
-          if (!res.ok) return;
-          const cfg = await res.json();
-          if (cfg.BUCKET_URL) {
-            BUCKET_URL = cfg.BUCKET_URL;
-            console.log('Config carregada (dev):', BUCKET_URL);
-          }
-          if (cfg.SERVER_DATE_URL) {
-            SERVER_DATE_URL = cfg.SERVER_DATE_URL.replace(/\/+$/, '');
-            console.log('SERVER_DATE_URL (dev):', SERVER_DATE_URL);
-          }
-        } catch (e) {
-          // silencioso - manter fallback embutido
-        }
-      }
-
-      // Tenta carregar players.json local para mapear IDs -> nomes
-      async function loadPlayers() {
-        try {
-          const res = await fetch('./players.json');
-          if (!res.ok) return;
-          const list = await res.json();
-          for (const p of list) playersMap.set(String(p.id), p);
-          console.log('Players carregados localmente', playersMap.size);
-          // preencher select de filtro
-          const sel = document.getElementById('playerFilter');
-          for (const p of list) {
-            const opt = document.createElement('option');
-            opt.value = String(p.id);
-            opt.textContent = `${p.displayName || p.name} (${p.id})`;
-            sel.appendChild(opt);
-          }
-        } catch (e) {
-          // silencioso
-        }
-      }
-
-      async function fetchHoursForDate(isoDate) {
-        const date = convertToDDMMYYYY(isoDate);
-        const base = BUCKET_URL.replace(/\/+$/, '');
-        const url = `${base}/hours_${date}.json`;
-
-        try {
-          console.log(`Tentando carregar horas: ${url}`);
-          const res = await fetch(url);
-          if (res.ok) {
-            const json = await res.json();
-            if (
-              (json && typeof json === 'object' && json.minutesByUser) ||
-              (json && typeof json === 'object' && json.hoursByUser)
-            ) {
-              console.log(`Horas: arquivo válido encontrado em ${url}`);
-              return json;
-            } else {
-              console.log(
-                `Arquivo encontrado mas não é relatório de horas (ignorando): ${url}`
-              );
+            function convertToDDMMYY(isoDate) {
+              const [year, month, day] = isoDate.split('-');
+              const yy = year.slice(-2); // Pegar últimos 2 dígitos do ano
+              return `${day}${month}${yy}`;
             }
-          } else {
-            console.log(`Não encontrado (status ${res.status}): ${url}`);
-          }
-        } catch (e) {
-          console.log(`Erro ao fetch ${url}:`, e && e.message);
-        }
-        return null;
-      }
 
-      // Agrega horas para uma única data (usa fetchHoursForDate internamente)
-      // Com fallback robusto: tenta várias datas candidatas e opcionalmente
-      // consulta SERVER_DATE_URL para obter a data exata do backend.
-      async function aggregateHoursForDate(iso) {
-        const candidates = [];
-        // data cliente
-        candidates.push(iso);
+            // Parse ISO 'YYYY-MM-DD' into local Date (avoid UTC shift)
+            function parseISOToLocalDate(iso) {
+              const [y, m, d] = iso.split('-').map((s) => parseInt(s, 10));
+              return new Date(y, m - 1, d);
+            }
 
-        // tentar aplicar um offset padrão do backend (padrão -180 minutos) - pode ser sobrescrito em config
-        const DEFAULT_BACKEND_TZ_MIN = -180;
-        const backendOffsetMin =
-          window.__BACKEND_TZ_MINUTES || DEFAULT_BACKEND_TZ_MIN;
+            async function loadConfig() {
+              // Apenas carregar config.json em desenvolvimento (localhost / 127.0.0.1 / file:)
+              try {
+                const host =
+                  (typeof location !== 'undefined' && location.hostname) || '';
+                const proto =
+                  (typeof location !== 'undefined' && location.protocol) || '';
+                if (
+                  host !== 'localhost' &&
+                  host !== '127.0.0.1' &&
+                  proto !== 'file:'
+                ) {
+                  // em produção (GitHub Pages) não carregamos o config local
+                  return;
+                }
 
-        // construir data com offset aplicada
-        try {
-          const d = parseISOToLocalDate(iso);
-          d.setMinutes(d.getMinutes() + backendOffsetMin);
-          const iso2 = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
-            2,
-            '0'
-          )}-${String(d.getDate()).padStart(2, '0')}`;
-          if (!candidates.includes(iso2)) candidates.push(iso2);
-        } catch (e) {
-          /* ignore */
-        }
+                const res = await fetch('./config.json');
+                if (!res.ok) return;
+                const cfg = await res.json();
+                if (cfg.BUCKET_URL) {
+                  BUCKET_URL = cfg.BUCKET_URL;
+                  console.log('Config carregada (dev):', BUCKET_URL);
+                }
+                if (cfg.SERVER_DATE_URL) {
+                  SERVER_DATE_URL = cfg.SERVER_DATE_URL.replace(/\/+$/, '');
+                  console.log('SERVER_DATE_URL (dev):', SERVER_DATE_URL);
+                }
+              } catch (e) {
+                // silencioso - manter fallback embutido
+              }
+            }
 
-        // ontem (fazer fallback para previous day)
-        try {
-          const d = parseISOToLocalDate(iso);
-          d.setDate(d.getDate() - 1);
-          const isoY = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(
-            2,
-            '0'
-          )}-${String(d.getDate()).padStart(2, '0')}`;
-          if (!candidates.includes(isoY)) candidates.push(isoY);
-        } catch (e) {
-          /* ignore */
-        }
+            // Tenta carregar players.json local para mapear IDs -> nomes
+            async function loadPlayers() {
+              try {
+                const res = await fetch('./players.json');
+                if (!res.ok) return;
+                const list = await res.json();
+                for (const p of list) playersMap.set(String(p.id), p);
+                console.log('Players carregados localmente', playersMap.size);
+                // preencher select de filtro
+                const sel = document.getElementById('playerFilter');
+                for (const p of list) {
+                  const opt = document.createElement('option');
+                  opt.value = String(p.id);
+                  opt.textContent = `${p.displayName || p.name} (${p.id})`;
+                  sel.appendChild(opt);
+                }
+              } catch (e) {
+                // silencioso
+              }
+            }
 
-        // se SERVER_DATE_URL configurada, consultar e adicionar ao candidates (por último)
-        if (SERVER_DATE_URL) {
-          try {
-            const res = await fetch(`${SERVER_DATE_URL}`);
-            if (res.ok) {
-              const json = await res.json();
-              if (json && json.date) {
-                // backend fornece date como DD-MM-YYYY
-                const parts = String(json.date).split('-');
-                if (parts.length === 3) {
-                  const isoServer = `${parts[2]}-${parts[1].padStart(
-                    2,
-                    '0'
-                  )}-${parts[0].padStart(2, '0')}`;
-                  if (!candidates.includes(isoServer))
-                    candidates.push(isoServer);
+            // Busca dados do arquivo diário (formato DDMMYY.json)
+            async function fetchDailyData(isoDate) {
+              const filename = convertToDDMMYY(isoDate);
+              const base = BUCKET_URL;
+              const url = `${base}/${filename}.json`;
+
+              try {
+                console.log(`Carregando dados diários: ${url}`);
+                const res = await fetch(url);
+                if (res.ok) {
+                  const data = await res.json();
+                  if (Array.isArray(data)) {
+                    console.log(`✅ Dados encontrados: ${data.length} entradas`);
+                    return data;
+                  }
+                } else {
+                  console.log(`Arquivo não encontrado (${res.status}): ${url}`);
+                }
+              } catch (e) {
+                console.log(`Erro ao carregar ${url}:`, e.message);
+              }
+              return [];
+            }
+
+            // Calcula estatísticas por player baseado nas entradas (cada entrada = 5min)
+            function calculatePlayerStats(dailyData) {
+              const stats = {};
+
+              for (const entry of dailyData) {
+                const player = entry.player;
+                if (!stats[player]) {
+                  stats[player] = {
+                    totalMinutes: 0,
+                    statusCount: {},
+                    gameCount: {},
+                    lastStatus: null,
+                    lastGame: null,
+                    lastTimestamp: null
+                  };
+                }
+
+                // Cada entrada = +5 minutos
+                stats[player].totalMinutes += 5;
+
+                // Contar status
+                const status = entry.status || 'Desconhecido';
+                stats[player].statusCount[status] = (stats[player].statusCount[status] || 0) + 1;
+
+                // Contar jogos
+                const game = entry.jogo || 'N/A';
+                stats[player].gameCount[game] = (stats[player].gameCount[game] || 0) + 1;
+
+                // Guardar último status/jogo
+                if (!stats[player].lastTimestamp || entry.timestamp > stats[player].lastTimestamp) {
+                  stats[player].lastStatus = status;
+                  stats[player].lastGame = game;
+                  stats[player].lastTimestamp = entry.timestamp;
                 }
               }
+
+              return stats;
             }
-          } catch (e) {
-            console.log('Erro ao consultar SERVER_DATE_URL:', e && e.message);
-          }
-        }
 
-        const minutesByUser = {};
+            // Carrega relatório para um dia (exibe presenças do primeiro dia) e agrega horas no intervalo
+            async function loadReport() {
+              const dateIso = document.getElementById('date').value;
+              if (!dateIso) return alert('Escolha uma data!');
 
-        for (const c of candidates) {
-          try {
-            const hours = await fetchHoursForDate(c);
-            if (hours && hours.minutesByUser) {
-              for (const [uid, mins] of Object.entries(hours.minutesByUser)) {
-                minutesByUser[uid] = (minutesByUser[uid] || 0) + mins;
+              // filtro por jogador (opcional)
+              const playerFilter = document.getElementById('playerFilter').value;
+
+              try {
+                // Buscar dados diários no novo formato
+                const dailyData = await fetchDailyData(dateIso);
+                if (dailyData.length === 0) {
+                  throw new Error('Nenhum dado encontrado para esta data');
+                }
+
+                // Calcular estatísticas por player
+                const playerStats = calculatePlayerStats(dailyData);
+
+                // Aplicar filtro por jogador (se houver)
+                let filteredData = dailyData;
+                if (playerFilter) {
+                   filteredData = dailyData.filter(entry =>
+                    entry.player.includes(playerFilter) ||
+                    entry.player === `Player ${playerFilter}`
+                  );
+                }
+
+                renderReport(filteredData, playerStats);
+              } catch (e) {
+                alert('Erro: ' + e.message);
               }
-              // sucesso: retornar agregação com o que foi encontrado (parar no primeiro arquivo válido)
-              const hoursByUser = {};
-              for (const [uid, mins] of Object.entries(minutesByUser)) {
-                hoursByUser[uid] = Math.round((mins / 60) * 100) / 100;
-              }
-              return { minutesByUser, hoursByUser };
             }
-          } catch (e) {
-            // continua para próximo candidato
-          }
-        }
 
-        // nada encontrado: retornar vazio
-        return { minutesByUser: {}, hoursByUser: {} };
-      }
+            // Carrega config e players ao iniciar (não bloqueante)
+            loadConfig();
+            loadPlayers();
 
-      // Carrega relatório para um dia (exibe presenças do primeiro dia) e agrega horas no intervalo
-      async function loadReport() {
-        const dateIso = document.getElementById('date').value;
-        if (!dateIso) return alert('Escolha uma data!');
+            let chartInstance = null;
 
-        // filtro por jogador (opcional)
-        const playerFilter = document.getElementById('playerFilter').value;
+            function renderReport(dailyData, playerStats) {
+              const div = document.getElementById('reportArea');
+              div.innerHTML = '';
 
-        const date = convertToDDMMYYYY(dateIso);
-        const url = `${BUCKET_URL.replace(/\/+$/, '')}/results_${date}.json`;
-        try {
-          const res = await fetch(url);
-          if (!res.ok) throw new Error('Relatório não encontrado');
-          const data = await res.json();
+              if (!Array.isArray(dailyData) || dailyData.length === 0) {
+                div.innerHTML = '<p>Nenhum dado disponível para esta data.</p>';
+                return;
+              }
 
-          const aggregatedHours = await aggregateHoursForDate(dateIso);
+              // Converter stats para array ordenável
+              const players = Object.keys(playerStats);
+              const sortBy = document.getElementById('sortBy')?.value || 'hours';
+              const sortDir = document.getElementById('sortDir')?.value || 'desc';
 
-          // aplicar filtro por jogador (se houver)
-          if (playerFilter) {
-            data.userPresences = data.userPresences.filter(
-              (p) => String(p.userId) === String(playerFilter)
-            );
-          }
+              players.sort((a, b) => {
+                if (sortBy === 'hours') {
+                  return (playerStats[b].totalMinutes - playerStats[a].totalMinutes) *
+                         (sortDir === 'asc' ? -1 : 1);
+                } else {
+                  // ordenar por nome do player
+                  return a.localeCompare(b) * (sortDir === 'asc' ? 1 : -1);
+                }
+              });
 
-          renderReport(data, aggregatedHours);
-        } catch (e) {
-          alert('Erro: ' + e.message);
-        }
-      }
+              // Formatador de tempo
+              function formatMinutesHMM(mins) {
+                if (typeof mins !== 'number' || isNaN(mins)) return '-';
+                const h = Math.floor(mins / 60);
+                const m = mins % 60;
+                return `${h}:${String(m).padStart(2, '0')}`;
+              }
 
-      // Carrega config e players ao iniciar (não bloqueante)
-      loadConfig();
-      loadPlayers();
+              // Construir tabela
+              let html = '<table><tr><th>Player</th><th>Tempo Total</th><th>Último Status</th><th>Último Jogo</th><th>Entradas</th></tr>';
 
-      let chartInstance = null;
+              for (const player of players) {
+                const stats = playerStats[player];
+                const timeText = formatMinutesHMM(stats.totalMinutes);
+                const entriesCount = Math.round(stats.totalMinutes / 5);
 
-      function renderReport(data, hoursData) {
-        const div = document.getElementById('reportArea');
-        div.innerHTML = '';
+                // Status mais frequente
+                const topStatus = Object.entries(stats.statusCount)
+                  .sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A';
 
-        if (
-          !Array.isArray(data.userPresences) ||
-          data.userPresences.length === 0
-        ) {
-          div.innerHTML = '<p>Nenhum dado disponível para esta data.</p>';
-          return;
-        }
+                // Jogo mais frequente
+                const topGame = Object.entries(stats.gameCount)
+                  .sort(([,a], [,b]) => b - a)[0]?.[0] || 'N/A';
 
-        // ordenar e paginar
-        const sortBy = document.getElementById('sortBy')
-          ? document.getElementById('sortBy').value
-          : 'presence';
-        const sortDir = document.getElementById('sortDir')
-          ? document.getElementById('sortDir').value
-          : 'desc';
+                html += `<tr>
+                  <td><strong>${player}</strong></td>
+                  <td style="text-align:center">${timeText}</td>
+                  <td>${stats.lastStatus || topStatus}</td>
+                  <td>${stats.lastGame || topGame}</td>
+                  <td style="text-align:center">${entriesCount}</td>
+                </tr>`;
+              }
 
-        // criar cópia para ordenação
-        let presList = Array.from(data.userPresences || []);
+              html += '</table>';
+              div.innerHTML = html;
 
-        // auxiliar: obter horas/minutos do aggregated hoursData
-        const getHours = (uid) =>
-          (hoursData && hoursData.hoursByUser && hoursData.hoursByUser[uid]) ||
-          0;
-        const getMinutes = (uid) =>
-          (hoursData &&
-            hoursData.minutesByUser &&
-            hoursData.minutesByUser[uid]) ||
-          (hoursData &&
-            hoursData.hoursByUser &&
-            Math.round(hoursData.hoursByUser[uid] * 60)) ||
-          0;
+              // Info adicional
+              const info = document.createElement('div');
+              info.className = 'muted';
+              info.style.marginTop = '10px';
+              info.textContent = `${players.length} players • ${dailyData.length} entradas total • Cada entrada = 5 minutos`;
+              div.appendChild(info);
 
-        function formatMinutesHMM(mins) {
-          if (typeof mins !== 'number' || isNaN(mins)) return '-';
-          const h = Math.floor(mins / 60);
-          const m = mins % 60;
-          return `${h}:${String(m).padStart(2, '0')}`;
-        }
+              // Atualizar gráfico
+              renderChart(playerStats);
+            }
 
-        presList.sort((a, b) => {
-          if (sortBy === 'hours') {
-            return (
-              (getHours(b.userId) - getHours(a.userId)) *
-              (sortDir === 'asc' ? -1 : 1)
-            );
-          }
-          // ordenar por presence type
-          return (
-            (b.userPresenceType - a.userPresenceType) *
-            (sortDir === 'asc' ? -1 : 1)
-          );
-        });
+            // Função para renderizar gráfico com dados dos players
+            function renderChart(playerStats) {
+              const players = Object.keys(playerStats);
+              const times = players.map(p => playerStats[p].totalMinutes / 60); // converter para horas
 
-        // paginação simples
-        const pageSize = 10;
-        const page = 1; // futuro: adicionar controle
+              const ctx = document.getElementById('chart');
 
-        const startIndex = (page - 1) * pageSize;
-        const pageSlice = presList.slice(startIndex, startIndex + pageSize);
+              // Destruir gráfico anterior
+              if (chartInstance) {
+                try {
+                  chartInstance.destroy();
+                } catch (e) { /* ignore */ }
+                chartInstance = null;
+              }
 
-        let html =
-          '<table><tr><th>Usuário</th><th>Presença</th><th>Última Localização</th><th>Horas hoje</th></tr>';
+              chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                  labels: players,
+                  datasets: [{
+                    label: 'Horas jogadas',
+                    data: times,
+                    backgroundColor: '#2196f3',
+                    borderColor: '#1976d2',
+                    borderWidth: 1
+                  }]
+                },
+                options: {
+                  responsive: true,
+                  scales: {
+                    y: {
+                      beginAtZero: true,
+                      title: { display: true, text: 'Horas' }
+                    }
+                  }
+                }
+              });
+            }
 
-        for (const info of pageSlice) {
-          // Mapear presence types: 0=Offline,1=Online,2=InGame,3=InStudio,4=Invisible
-          const presenceMap = {
-            0: { text: 'Offline', cls: 'offline' },
-            1: { text: 'Online', cls: 'online' },
-            2: { text: 'InGame', cls: 'ingame' },
-            3: { text: 'InStudio', cls: 'instudio' },
-            4: { text: 'Invisible', cls: 'invisible' },
-          };
-          const p = presenceMap[info.userPresenceType] || {
-            text: 'Desconhecido',
-            cls: '',
-          };
-          const presenceText = `<span class="badge ${p.cls}">${p.text}</span>`;
+            // Ao carregar a página, preencher as datas (hoje) e players
+            function setTodayInputs() {
+              // Usa a data local do cliente; o frontend aplicará fallback caso o
+              // backend esteja gravando com outro timezone (SERVER_DATE_URL pode ajudar).
+              const now = new Date();
 
-          const user = playersMap.get(String(info.userId));
-          const title = user
-            ? `${user.displayName} (${user.name})`
-            : info.userId;
+              const pad = (n) => n.toString().padStart(2, '0');
+              const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
+                now.getDate()
+              )}`;
+              document.getElementById('date').value = iso;
+              // carregar imediatamente para conveniência
+              try {
+                loadReport();
+              } catch (e) {
+                /* ignore */
+              }
+            }
 
-          // Mostrar como H:MM usando minutesByUser quando disponível
-          const uidStr = String(info.userId);
-          const mins = getMinutes(uidStr);
-          const hoursText = mins > 0 ? formatMinutesHMM(mins) : '-';
+            // Export CSV da tabela atual
+            function exportCSV() {
+              const table = document.querySelector('#reportArea table');
+              if (!table) return alert('Nada para exportar');
+              const rows = [];
+              for (const tr of table.querySelectorAll('tr')) {
+                const cols = Array.from(tr.querySelectorAll('th,td')).map((n) =>
+                  n.textContent.trim()
+                );
+                rows.push(cols.join(','));
+              }
+              const csv = rows.join('\n');
+              const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+              const url = URL.createObjectURL(blob);
+              const a = document.createElement('a');
+              a.href = url;
+              a.download = `report-${
+                document.getElementById('date').value || 'report'
+              }.csv`;
+              a.click();
+              URL.revokeObjectURL(url);
+            }
 
-          html += `<tr>
-      <td>${title}<div style="font-size:0.9em;color:#666;">ID: ${
-            info.userId
-          }</div></td>
-      <td>${presenceText}</td>
-      <td>${info.lastLocation || '-'}</td>
-      <td style="text-align:center">${hoursText}</td>
-    </tr>`;
-        }
+            function printReport() {
+              window.print();
+            }
 
-        html += '</table>';
-        div.innerHTML = html;
-
-        // adicionar paginação / info
-        const pg = document.createElement('div');
-        pg.className = 'muted';
-        pg.textContent = `Mostrando ${startIndex + 1} - ${
-          startIndex + pageSlice.length
-        } de ${presList.length}`;
-        div.appendChild(pg);
-
-        // Gráfico: mostrar todos os status (0..4) e contá-los
-        const statusCounts = { 0: 0, 1: 0, 2: 0, 3: 0, 4: 0, unknown: 0 };
-        for (const p of data.userPresences) {
-          const k = String(p.userPresenceType);
-          if (k in statusCounts) statusCounts[k]++;
-          else statusCounts.unknown++;
-        }
-
-        const labels = [
-          'Offline',
-          'Online',
-          'InGame',
-          'InStudio',
-          'Invisible',
-          'Desconhecido',
-        ];
-        const dataset = [
-          statusCounts[0],
-          statusCounts[1],
-          statusCounts[2],
-          statusCounts[3],
-          statusCounts[4],
-          statusCounts.unknown,
-        ];
-
-        const ctx = document.getElementById('chart');
-        // Destrói instancia anterior do Chart.js para evitar erro "Canvas is already in use"
-        if (chartInstance) {
-          try {
-            chartInstance.destroy();
-          } catch (e) {
-            /* ignore */
-          }
-          chartInstance = null;
-        }
-
-        chartInstance = new Chart(ctx, {
-          type: 'bar',
-          data: {
-            labels,
-            datasets: [
-              {
-                label: 'Número de jogadores',
-                data: dataset,
-                backgroundColor: [
-                  '#f44336',
-                  '#4caf50',
-                  '#2196f3',
-                  '#ff9800',
-                  '#607d8b',
-                  '#9e9e9e',
-                ],
-              },
-            ],
-          },
-          options: {
-            scales: {
-              y: { beginAtZero: true, precision: 0 },
-            },
-          },
-        });
-      }
-
-      // Ao carregar a página, preencher as datas (hoje) e players
-      function setTodayInputs() {
-        // Usa a data local do cliente; o frontend aplicará fallback caso o
-        // backend esteja gravando com outro timezone (SERVER_DATE_URL pode ajudar).
-        const now = new Date();
-
-        const pad = (n) => n.toString().padStart(2, '0');
-        const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
-          now.getDate()
-        )}`;
-        document.getElementById('date').value = iso;
-        // carregar imediatamente para conveniência
-        try {
-          loadReport();
-        } catch (e) {
-          /* ignore */
-        }
-      }
-
-      // Export CSV da tabela atual
-      function exportCSV() {
-        const table = document.querySelector('#reportArea table');
-        if (!table) return alert('Nada para exportar');
-        const rows = [];
-        for (const tr of table.querySelectorAll('tr')) {
-          const cols = Array.from(tr.querySelectorAll('th,td')).map((n) =>
-            n.textContent.trim()
-          );
-          rows.push(cols.join(','));
-        }
-        const csv = rows.join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `report-${
-          document.getElementById('date').value || 'report'
-        }.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-
-      function printReport() {
-        window.print();
-      }
-
-      // inicializar
-      setTodayInputs();
-      loadPlayers();
+            // inicializar
+            setTodayInputs();
+            loadPlayers();
     </script>
   </body>
 </html>
