@@ -44,17 +44,29 @@
   </div>
 
   <script>
+    // Service Worker para notificações
+    let serviceWorkerReady = false;
+    let swRegistration = null;
+    if ('serviceWorker' in navigator && 'Notification' in window) {
+      navigator.serviceWorker.register('./sw.js').then(function(reg) {
+        swRegistration = reg;
+        serviceWorkerReady = true;
+        console.log('Service worker registrado!', reg);
+      });
+      Notification.requestPermission();
+    }
+
     // URL do bucket S3 (ajuste conforme necessário)
     const BUCKET_URL = 'https://bucket-tgferr-monitor.br-se1.magaluobjects.com';
 
-    // Converte data ISO para formato DDMMYY (usado no nome do arquivo JSON)
+    // Converte data ISO para formato DDMMYY
     function convertToDDMMYY(isoDate) {
       const [year, month, day] = isoDate.split('-');
       const yy = year.slice(-2);
       return `${day}${month}${yy}`;
     }
 
-    // Carrega lista de jogadores do arquivo local (opcional, exibe nomes ao invés de IDs)
+    // Carrega lista de jogadores do arquivo local (opcional)
     let playersMap = new Map();
     async function loadPlayers() {
       try {
@@ -102,6 +114,31 @@
       return Object.values(minutes);
     }
 
+    // Notifica se jogador está online ou jogando
+    function notifyOnlinePlayers(data) {
+      if (Notification.permission !== 'granted' || !serviceWorkerReady) return;
+      const notified = new Set();
+      for (const entry of data) {
+        if (['Online', 'Jogando'].includes(entry.status)) {
+          const playerName = playersMap.get(entry.player) || entry.player;
+          const status = entry.status;
+          const jogo = entry.jogo;
+          const key = `${entry.player}|${status}|${jogo}`;
+          // Só notifica uma vez por jogador/jogo/status por relatório carregado
+          if (!notified.has(key)) {
+            notified.add(key);
+            if (navigator.serviceWorker.controller) {
+              navigator.serviceWorker.controller.postMessage({
+                playerName,
+                status,
+                jogo
+              });
+            }
+          }
+        }
+      }
+    }
+
     async function loadReport() {
       const dateIso = document.getElementById('date').value;
       if (!dateIso) return alert('Escolha uma data!');
@@ -109,6 +146,9 @@
 
       const dailyData = await fetchDailyData(dateIso);
       const aggregated = aggregateMinutes(dailyData);
+
+      // Chama notificação
+      notifyOnlinePlayers(dailyData);
 
       let html = '<h3>Tempo por jogador e por jogo</h3><div class="table-wrap"><table><thead><tr><th>Jogador</th><th>Jogo</th><th>Minutos</th><th>Horas</th></tr></thead><tbody>';
       let found = false;
@@ -153,7 +193,6 @@
       window.print();
     }
 
-    // Inicializa a página
     setTodayInputs();
     loadPlayers();
   </script>
