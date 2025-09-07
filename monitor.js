@@ -147,38 +147,113 @@ async function saveDailyData(filename, presenceData) {
     4: 'Invisível',
   };
 
-  // Adicionar novas entradas (cada execução = +5 minutos por player ativo)
-  for (const info of presenceData.userPresences || []) {
-    // Buscar nome do player usando mapeamento
-    const playerName = getPlayerName(info.userId);
-    const status = statusMap[info.userPresenceType] || 'Desconhecido';
-    const jogo = info.lastLocation || 'N/A';
-
-    // Adicionar entrada (cada linha = +5 minutos para esse player/status)
-    existingData.push({
-      player: playerName,
-      status: status,
-      jogo: jogo,
-      timestamp: new Date().toISOString(),
-    });
-  }
+  // Processar dados usando nova lógica de tempo acumulado
+  const updatedData = await processPlayerData(
+    existingData,
+    presenceData,
+    statusMap
+  );
 
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET,
     Key: filename,
-    Body: JSON.stringify(existingData, null, 2),
+    Body: JSON.stringify(updatedData, null, 2),
     ContentType: 'application/json',
   });
 
   try {
     await s3Client.send(command);
     console.log(
-      `✅ Dados salvos: ${filename} (${existingData.length} entradas)`
+      `✅ Dados salvos: ${filename} (${updatedData.length} entradas)`
     );
   } catch (err) {
     console.error('Erro ao enviar para S3:', err);
     throw err;
   }
+}
+
+async function processPlayerData(existingData, presenceData, statusMap) {
+  const currentTime = new Date().toISOString();
+  const updatedData = [];
+
+  console.log(
+    `🔄 Processando dados para ${
+      presenceData.userPresences?.length || 0
+    } players...`
+  );
+
+  // Processar cada player da presença atual
+  for (const info of presenceData.userPresences || []) {
+    const playerName = getPlayerName(info.userId);
+    const status = statusMap[info.userPresenceType] || 'Desconhecido';
+    const jogo = info.lastLocation || 'N/A';
+
+    // Encontrar entrada existente para este player
+    const existingEntry = existingData.find(
+      (entry) => entry.player === playerName
+    );
+
+    if (existingEntry) {
+      // PASSO 1: Aplicar lógica baseada nas regras definidas
+
+      if (existingEntry.status === status && existingEntry.jogo === jogo) {
+        // Mesmo status e mesmo jogo: calcular minutos baseado na diferença de tempo
+        const lastUpdate = new Date(existingEntry.updatedAt);
+        const now = new Date(currentTime);
+        const minutesDiff = Math.floor((now - lastUpdate) / (1000 * 60));
+
+        // Validar se a diferença de tempo é razoável (máximo 60 minutos para evitar dados corrompidos)
+        const validMinutesDiff = Math.min(minutesDiff, 60);
+        const newCountMinutes = Math.max(
+          0,
+          (existingEntry.countMinutes || 0) + validMinutesDiff
+        );
+
+        console.log(
+          `⏱️ ${playerName}: ${status} em ${jogo} - +${validMinutesDiff} min (total: ${newCountMinutes})`
+        );
+
+        updatedData.push({
+          player: playerName,
+          status: status,
+          jogo: jogo,
+          countMinutes: newCountMinutes,
+          updatedAt: currentTime,
+        });
+      } else {
+        // Status diferente OU jogo diferente: começar novo nó com 0 minutos
+        console.log(
+          `🔄 ${playerName}: Mudança detectada - ${existingEntry.status}/${existingEntry.jogo} → ${status}/${jogo} (resetando contador)`
+        );
+
+        updatedData.push({
+          player: playerName,
+          status: status,
+          jogo: jogo,
+          countMinutes: 0,
+          updatedAt: currentTime,
+        });
+      }
+    } else {
+      // Player novo: criar entrada com 0 minutos
+      console.log(
+        `🆕 ${playerName}: Novo player detectado - ${status} em ${jogo}`
+      );
+
+      updatedData.push({
+        player: playerName,
+        status: status,
+        jogo: jogo,
+        countMinutes: 0,
+        updatedAt: currentTime,
+      });
+    }
+  }
+
+  console.log(
+    `✅ Processamento concluído: ${updatedData.length} entradas atualizadas`
+  );
+  return updatedData;
 }
 
 // Funções auxiliares removidas - usando abordagem simplificada
