@@ -20,7 +20,7 @@ jobs:
 
       - run: npm install
 
-      - run: node monitor.js
+      - run: node monitor2.js
         env:
           S3_REGION: ${{ secrets.S3_REGION }}
           S3_ENDPOINT: ${{ secrets.S3_ENDPOINT }}
