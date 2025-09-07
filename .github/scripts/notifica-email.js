@@ -1,5 +1,5 @@
-const fs = require('fs');
-const nodemailer = require('nodemailer');
+import fs from 'fs';
+import nodemailer from 'nodemailer';
 
 const EMAIL_USER = process.env.EMAIL_USER;
 const EMAIL_PASS = process.env.EMAIL_PASS;
