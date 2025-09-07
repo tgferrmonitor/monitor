@@ -7,345 +7,127 @@
       href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap"
       rel="stylesheet"
     />
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="./styles.css" />
+    <style>
+      body { font-family: 'Inter', sans-serif; background: #f8fafc; }
+      .container { max-width: 700px; margin: 40px auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001;}
+      .header { margin-bottom: 24px; }
+      .controls { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; align-items: center;}
+      .btn { padding: 6px 18px; border-radius: 4px; border: none; background: #1e293b; color: #fff; font-weight: 600; cursor: pointer;}
+      .btn.secondary { background: #e2e8f0; color: #334155;}
+      .table-wrap { overflow-x: auto; }
+      table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+      th, td { padding: 8px 12px; border: 1px solid #e2e8f0; }
+      th { background: #f1f5f9; }
+      details { margin-top: 16px; }
+      .muted { color: #64748b; margin-bottom: 4px;}
+      @media (max-width: 600px) {.container{padding:8px}.controls{gap:8px}}
+    </style>
   </head>
   <body>
-    <div class="site-font">
-      <div class="container">
-        <div class="header">
-          <h1>📊 Relatórios de Jogadores Roblox</h1>
-          <div class="muted">Visual moderno</div>
-        </div>
-
-        <div class="controls">
-          <label>Data: <input type="date" id="date" /></label>
-          <label
-            >Jogador:
-            <select id="playerFilter">
-              <option value="">(todos)</option>
-            </select></label
-          >
-          <label
-            >Ordenar por:
-            <select id="sortBy">
-              <option value="presence">Presença</option>
-              <option value="hours">Horas</option>
-            </select></label
-          >
-          <label
-            >Ordem:
-            <select id="sortDir">
-              <option value="desc">Desc</option>
-              <option value="asc">Asc</option>
-            </select></label
-          >
-          <div class="flex">
-            <button class="btn" onclick="loadReport()">Carregar</button>
-            <button class="btn secondary" onclick="setTodayInputs()">
-              Hoje
-            </button>
-            <button class="btn secondary" onclick="exportCSV()">
-              Export CSV
-            </button>
-            <button class="btn secondary" onclick="printReport()">
-              Imprimir
-            </button>
-          </div>
-        </div>
-
-        <div id="reportArea" class="card"></div>
+    <div class="container">
+      <div class="header">
+        <h1>📊 Relatórios de Jogadores Roblox</h1>
+        <div class="muted">Acompanhamento por jogador e por jogo</div>
       </div>
+      <div class="controls">
+        <label>Data:
+          <input type="date" id="date" />
+        </label>
+        <label>Jogador:
+          <select id="playerFilter">
+            <option value="">(todos)</option>
+          </select>
+        </label>
+        <button class="btn" onclick="loadReport()">Carregar</button>
+        <button class="btn secondary" onclick="setTodayInputs()">Hoje</button>
+        <button class="btn secondary" onclick="exportCSV()">Export CSV</button>
+        <button class="btn secondary" onclick="printReport()">Imprimir</button>
+      </div>
+      <div id="reportArea" class="card"></div>
     </div>
 
     <script>
+      // URL do bucket S3 (ajuste conforme necessário)
       let BUCKET_URL = 'https://bucket-tgferr-monitor.br-se1.magaluobjects.com';
-      // Opcional: URL para consultar a data do servidor (ex: http://host:3001/server-date)
-      // Pode ser definida em docs/config.json como SERVER_DATE_URL para ambientes distribuídos.
-      let SERVER_DATE_URL = null;
 
-      // Tenta carregar docs/config.json para sobrepor BUCKET_URL em desenvolvimento
-      let playersMap = new Map();
-
+      // Converte data ISO para formato DDMMYY (usado no nome do arquivo JSON)
       function convertToDDMMYY(isoDate) {
         const [year, month, day] = isoDate.split('-');
-        const yy = year.slice(-2); // Pegar últimos 2 dígitos do ano
+        const yy = year.slice(-2);
         return `${day}${month}${yy}`;
       }
 
-      // Parse ISO 'YYYY-MM-DD' into local Date (avoid UTC shift)
-      function parseISOToLocalDate(iso) {
-        const [y, m, d] = iso.split('-').map((s) => parseInt(s, 10));
-        return new Date(y, m - 1, d);
-      }
-
-      async function loadConfig() {
-        // Apenas carregar config.json em desenvolvimento (localhost / 127.0.0.1 / file:)
-        try {
-          const host =
-            (typeof location !== 'undefined' && location.hostname) || '';
-          const proto =
-            (typeof location !== 'undefined' && location.protocol) || '';
-          if (
-            host !== 'localhost' &&
-            host !== '127.0.0.1' &&
-            proto !== 'file:'
-          ) {
-            // em produção (GitHub Pages) não carregamos o config local
-            return;
-          }
-
-          const res = await fetch('./config.json');
-          if (!res.ok) return;
-          const cfg = await res.json();
-          if (cfg.BUCKET_URL) {
-            BUCKET_URL = cfg.BUCKET_URL;
-            console.log('Config carregada (dev):', BUCKET_URL);
-          }
-          if (cfg.SERVER_DATE_URL) {
-            SERVER_DATE_URL = cfg.SERVER_DATE_URL.replace(/\/+$/, '');
-            console.log('SERVER_DATE_URL (dev):', SERVER_DATE_URL);
-          }
-        } catch (e) {
-          // silencioso - manter fallback embutido
-        }
-      }
-
-      // Tenta carregar players.json local para mapear IDs -> nomes
+      // Carrega lista de jogadores do arquivo local (opcional, exibe nomes ao invés de IDs)
+      let playersMap = new Map();
       async function loadPlayers() {
         try {
           const res = await fetch('./players.json');
           if (!res.ok) return;
           const list = await res.json();
-          for (const p of list) playersMap.set(String(p.id), p);
-          console.log('Players carregados localmente', playersMap.size);
+          for (const p of list) playersMap.set(String(p.id), p.name || p.displayName || p.id);
           // preencher select de filtro
           const sel = document.getElementById('playerFilter');
           for (const p of list) {
             const opt = document.createElement('option');
             opt.value = String(p.id);
-            opt.textContent = p.name;
+            opt.textContent = p.name || p.displayName || p.id;
             sel.appendChild(opt);
           }
-        } catch (e) {
-          // silencioso
-        }
+        } catch (e) {/* ignore */}
       }
 
-      // Busca dados do arquivo diário (formato DDMMYY.json)
+      // Busca dados do arquivo diário (formato DDMMYY.json, novo formato)
       async function fetchDailyData(isoDate) {
         const filename = convertToDDMMYY(isoDate);
-        const base = BUCKET_URL;
-        const url = `${base}/${filename}.json`;
-
+        const url = `${BUCKET_URL}/${filename}.json`;
         try {
-          console.log(`Carregando dados diários: ${url}`);
           const res = await fetch(url);
           if (res.ok) {
             const data = await res.json();
-            if (Array.isArray(data)) {
-              console.log(`✅ Dados encontrados: ${data.length} entradas`);
-              return data;
-            }
-          } else {
-            console.log(`Arquivo não encontrado (${res.status}): ${url}`);
+            return data; // novo formato: {playerId: {game: minutos, ...}, ...}
           }
-        } catch (e) {
-          console.log(`Erro ao carregar ${url}:`, e.message);
-        }
-        return [];
+        } catch (e) { /* ignore */ }
+        return {};
       }
 
-      // Calcula estatísticas por player baseado nos timestamps das entradas
-      function calculatePlayerStats(dailyData) {
-        const stats = {};
-        // Converter timestamps para ms numéricos uma vez
-        dailyData.forEach((entry) => {
-          entry._ts = Date.parse(entry.timestamp);
-        });
-        // Agrupar entradas por player
-        const entriesByPlayer = {};
-        for (const entry of dailyData) {
-          const player = entry.player;
-          if (!entriesByPlayer[player]) entriesByPlayer[player] = [];
-          entriesByPlayer[player].push(entry);
-        }
-        // Processar cada player separadamente
-        for (const player in entriesByPlayer) {
-          const entries = entriesByPlayer[player];
-          // Ordenar por timestamp ascendente usando _ts
-          entries.sort((a, b) => a._ts - b._ts);
-          // Inicializar stats para o player
-          stats[player] = {
-            totalMinutes: 0,
-            statusCount: {},
-            minutesByStatus: {},
-            gameCount: {},
-            lastStatus: null,
-            lastGame: null,
-            lastTimestamp: null,
-          };
-          let prevEntry = null;
-          for (const entry of entries) {
-            if (prevEntry) {
-              // calcular diferença real entre timestamps usando _ts
-              const diffMs = entry._ts - prevEntry._ts;
-              // só acumular se diffMs for número válido
-              if (Number.isFinite(diffMs) && diffMs > 0) {
-                const diffMin = diffMs / 1000 / 60;
-                stats[player].totalMinutes += diffMin;
-                // Acumular minutos por status anterior
-                const prevStatus = prevEntry.status || 'Desconhecido';
-                stats[player].minutesByStatus[prevStatus] =
-                  (stats[player].minutesByStatus[prevStatus] || 0) + diffMin;
-                stats[player].statusCount[prevStatus] =
-                  (stats[player].statusCount[prevStatus] || 0) + 1;
-                // Contar jogos anteriores
-                const prevGame = prevEntry.jogo || 'N/A';
-                stats[player].gameCount[prevGame] =
-                  (stats[player].gameCount[prevGame] || 0) + 1;
-              }
-            }
-            // Atualizar último status/jogo
-            if (
-              !stats[player].lastTimestamp ||
-              entry.timestamp > stats[player].lastTimestamp
-            ) {
-              stats[player].lastStatus = entry.status || 'Desconhecido';
-              stats[player].lastGame = entry.jogo || 'N/A';
-              stats[player].lastTimestamp = entry.timestamp;
-            }
-            prevEntry = entry;
-          }
-        }
-        return stats;
-      }
-
-      // Carrega relatório para um dia (exibe presenças do primeiro dia) e agrega horas no intervalo
+      // Renderiza relatório agregando minutos por jogador por jogo
       async function loadReport() {
         const dateIso = document.getElementById('date').value;
         if (!dateIso) return alert('Escolha uma data!');
-
-        // filtro por jogador (opcional)
         const playerFilter = document.getElementById('playerFilter').value;
 
-        try {
-          // Buscar dados diários no novo formato
-          const dailyData = await fetchDailyData(dateIso);
-          if (dailyData.length === 0) {
-            throw new Error('Nenhum dado encontrado para esta data');
+        const dailyData = await fetchDailyData(dateIso);
+        let html = '<h3>Tempo por jogador e por jogo</h3><div class="table-wrap"><table><thead><tr><th>Jogador</th><th>Jogo</th><th>Minutos</th><th>Horas</th></tr></thead><tbody>';
+        let dataFound = false;
+        for (const [playerId, games] of Object.entries(dailyData)) {
+          if (playerFilter && playerId !== playerFilter) continue;
+          const playerName = playersMap.get(playerId) || playerId;
+          for (const [game, minutes] of Object.entries(games)) {
+            dataFound = true;
+            html += `<tr><td>${playerName}</td><td>${game}</td><td>${minutes}</td><td>${(minutes/60).toFixed(2)}</td></tr>`;
           }
-
-          // Calcular estatísticas por player
-          const playerStats = calculatePlayerStats(dailyData);
-
-          // Aplicar filtro por jogador (se houver)
-          let filteredData = dailyData;
-          if (playerFilter) {
-            filteredData = dailyData.filter(
-              (entry) =>
-                entry.player.includes(playerFilter) ||
-                entry.player === `Player ${playerFilter}`
-            );
-          }
-
-          renderReport(filteredData, playerStats);
-        } catch (e) {
-          alert('Erro: ' + e.message);
         }
+        html += '</tbody></table></div>';
+        if (!dataFound) html += '<p style="margin-top:16px;">Nenhum dado para esta data/jogador.</p>';
+        document.getElementById('reportArea').innerHTML = html;
       }
 
-      // Carrega config e players ao iniciar (não bloqueante)
-      loadConfig();
-      loadPlayers();
-
-      let chartInstance = null;
-
-      function renderReport(dailyData, playerStats) {
-        const div = document.getElementById('reportArea');
-        div.innerHTML = '';
-
-        if (!Array.isArray(dailyData) || dailyData.length === 0) {
-          div.innerHTML = '<p>Nenhum dado disponível para esta data.</p>';
-          return;
-        }
-
-        // Remover gráfico
-        // Construir tabela de histórico de entradas
-        const sortedData = dailyData
-          .slice()
-          .sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
-        let historyHtml =
-          '<h3>Histórico de Presença</h3>' +
-          '<div class="table-wrap"><table>' +
-          '<thead><tr><th>Horário</th><th>Player</th><th>Status</th><th>Jogo</th></tr></thead><tbody>';
-        for (const entry of sortedData) {
-          const time = new Date(entry.timestamp).toLocaleTimeString();
-          const pid = entry.player;
-          const m = /^Player (\d+)$/.exec(pid);
-          const name =
-            m && playersMap.get(m[1])
-              ? playersMap.get(m[1]).displayName || playersMap.get(m[1]).name
-              : pid;
-          historyHtml += `<tr><td>${time}</td><td>${name}</td><td>${entry.status}</td><td>${entry.jogo}</td></tr>`;
-        }
-        historyHtml += '</tbody></table></div>';
-        // Div será preenchida com as seções abaixo
-
-        // Construir tabela de status atual (último status de cada player)
-        let currentHtml =
-          '<h3>Status Atual dos Players</h3>' +
-          '<div class="table-wrap"><table>' +
-          '<thead><tr><th>Player</th><th>Status</th><th>Jogo</th><th>Horário</th></tr></thead><tbody>';
-        for (const [playerKey, stats] of Object.entries(playerStats)) {
-          const m = /^Player (\d+)$/.exec(playerKey);
-          const name =
-            m && playersMap.get(m[1])
-              ? playersMap.get(m[1]).displayName || playersMap.get(m[1]).name
-              : playerKey;
-          const ts = new Date(stats.lastTimestamp).toLocaleTimeString();
-          currentHtml += `<tr><td>${name}</td><td>${stats.lastStatus}</td><td>${stats.lastGame}</td><td>${ts}</td></tr>`;
-        }
-        currentHtml += '</tbody></table></div>';
-        // Exibir status atual primeiro
-        div.innerHTML = currentHtml;
-        // Exibir histórico em accordion abaixo
-        const historySection =
-          '<details class="card" style="margin-top:16px">' +
-          '<summary style="cursor:pointer;font-weight:600;">Histórico de Presença</summary>' +
-          historyHtml +
-          '</details>';
-        div.innerHTML += historySection;
-      }
-
-      // Ao carregar a página, preencher as datas (hoje) e players
       function setTodayInputs() {
-        // Usa a data local do cliente; o frontend aplicará fallback caso o
-        // backend esteja gravando com outro timezone (SERVER_DATE_URL pode ajudar).
         const now = new Date();
-
         const pad = (n) => n.toString().padStart(2, '0');
-        const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
-          now.getDate()
-        )}`;
+        const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
         document.getElementById('date').value = iso;
-        // carregar imediatamente para conveniência
-        try {
-          loadReport();
-        } catch (e) {
-          /* ignore */
-        }
+        loadReport();
       }
 
-      // Export CSV da tabela atual
+      // Exporta CSV da tabela
       function exportCSV() {
         const table = document.querySelector('#reportArea table');
         if (!table) return alert('Nada para exportar');
         const rows = [];
         for (const tr of table.querySelectorAll('tr')) {
-          const cols = Array.from(tr.querySelectorAll('th,td')).map((n) =>
-            n.textContent.trim()
-          );
+          const cols = Array.from(tr.querySelectorAll('th,td')).map((n) => n.textContent.trim());
           rows.push(cols.join(','));
         }
         const csv = rows.join('\n');
@@ -353,9 +135,7 @@
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `report-${
-          document.getElementById('date').value || 'report'
-        }.csv`;
+        a.download = `report-${document.getElementById('date').value || 'report'}.csv`;
         a.click();
         URL.revokeObjectURL(url);
       }
@@ -364,7 +144,7 @@
         window.print();
       }
 
-      // inicializar
+      // Inicializa a página
       setTodayInputs();
       loadPlayers();
     </script>
