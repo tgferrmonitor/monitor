@@ -1,0 +1,29 @@
+name: Notificar Mudança de Status dos Jogadores
+
+on:
+  schedule:
+    # Executa a cada 5 minutos (ajuste se quiser menos/more frequente)
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+jobs:
+  status_monitor:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout do repositório
+        uses: actions/checkout@v3
+
+      - name: Instala dependências Node.js
+        run: |
+          npm install node-fetch@2 nodemailer
+
+      - name: Baixa arquivo do bucket Magalu Cloud
+        run: |
+          curl -o daily.json "https://bucket-tgferr-monitor.br-se1.magaluobjects.com/$(date +'%d%m%y').json"
+
+      - name: Detecta mudanças e envia e-mail
+        env:
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
+        run: node .github/scripts/notifica-email.js
