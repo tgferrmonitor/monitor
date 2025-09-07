@@ -1,152 +1,161 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <title>Relatórios Roblox</title>
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&display=swap"
-      rel="stylesheet"
-    />
-    <link rel="stylesheet" href="./styles.css" />
-    <style>
-      body { font-family: 'Inter', sans-serif; background: #f8fafc; }
-      .container { max-width: 700px; margin: 40px auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001;}
-      .header { margin-bottom: 24px; }
-      .controls { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; align-items: center;}
-      .btn { padding: 6px 18px; border-radius: 4px; border: none; background: #1e293b; color: #fff; font-weight: 600; cursor: pointer;}
-      .btn.secondary { background: #e2e8f0; color: #334155;}
-      .table-wrap { overflow-x: auto; }
-      table { border-collapse: collapse; width: 100%; margin-top: 12px; }
-      th, td { padding: 8px 12px; border: 1px solid #e2e8f0; }
-      th { background: #f1f5f9; }
-      details { margin-top: 16px; }
-      .muted { color: #64748b; margin-bottom: 4px;}
-      @media (max-width: 600px) {.container{padding:8px}.controls{gap:8px}}
-    </style>
-  </head>
-  <body>
-    <div class="container">
-      <div class="header">
-        <h1>📊 Relatórios de Jogadores Roblox</h1>
-        <div class="muted">Acompanhamento por jogador e por jogo</div>
-      </div>
-      <div class="controls">
-        <label>Data:
-          <input type="date" id="date" />
-        </label>
-        <label>Jogador:
-          <select id="playerFilter">
-            <option value="">(todos)</option>
-          </select>
-        </label>
-        <button class="btn" onclick="loadReport()">Carregar</button>
-        <button class="btn secondary" onclick="setTodayInputs()">Hoje</button>
-        <button class="btn secondary" onclick="exportCSV()">Export CSV</button>
-        <button class="btn secondary" onclick="printReport()">Imprimir</button>
-      </div>
-      <div id="reportArea" class="card"></div>
+<head>
+  <meta charset="UTF-8" />
+  <title>Relatórios Roblox</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    body { font-family: 'Inter', Arial, sans-serif; background: #f8fafc; }
+    .container { max-width: 700px; margin: 40px auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001;}
+    .header { margin-bottom: 24px; }
+    .controls { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; align-items: center;}
+    .btn { padding: 6px 18px; border-radius: 4px; border: none; background: #1e293b; color: #fff; font-weight: 600; cursor: pointer;}
+    .btn.secondary { background: #e2e8f0; color: #334155;}
+    .table-wrap { overflow-x: auto; }
+    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
+    th, td { padding: 8px 12px; border: 1px solid #e2e8f0; }
+    th { background: #f1f5f9; }
+    details { margin-top: 16px; }
+    .muted { color: #64748b; margin-bottom: 4px;}
+    @media (max-width: 600px) {.container{padding:8px}.controls{gap:8px}}
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>📊 Relatórios de Jogadores Roblox</h1>
+      <div class="muted">Tempo jogado por jogador e por jogo</div>
     </div>
+    <div class="controls">
+      <label>Data:
+        <input type="date" id="date" />
+      </label>
+      <label>Jogador:
+        <select id="playerFilter">
+          <option value="">(todos)</option>
+        </select>
+      </label>
+      <button class="btn" onclick="loadReport()">Carregar</button>
+      <button class="btn secondary" onclick="setTodayInputs()">Hoje</button>
+      <button class="btn secondary" onclick="exportCSV()">Exportar CSV</button>
+      <button class="btn secondary" onclick="printReport()">Imprimir</button>
+    </div>
+    <div id="reportArea" class="card"></div>
+  </div>
 
-    <script>
-      // URL do bucket S3 (ajuste conforme necessário)
-      let BUCKET_URL = 'https://bucket-tgferr-monitor.br-se1.magaluobjects.com';
+  <script>
+    // URL do bucket S3 (ajuste conforme necessário)
+    const BUCKET_URL = 'https://bucket-tgferr-monitor.br-se1.magaluobjects.com';
 
-      // Converte data ISO para formato DDMMYY (usado no nome do arquivo JSON)
-      function convertToDDMMYY(isoDate) {
-        const [year, month, day] = isoDate.split('-');
-        const yy = year.slice(-2);
-        return `${day}${month}${yy}`;
-      }
+    // Converte data ISO para formato DDMMYY (usado no nome do arquivo JSON)
+    function convertToDDMMYY(isoDate) {
+      const [year, month, day] = isoDate.split('-');
+      const yy = year.slice(-2);
+      return `${day}${month}${yy}`;
+    }
 
-      // Carrega lista de jogadores do arquivo local (opcional, exibe nomes ao invés de IDs)
-      let playersMap = new Map();
-      async function loadPlayers() {
-        try {
-          const res = await fetch('./players.json');
-          if (!res.ok) return;
-          const list = await res.json();
-          for (const p of list) playersMap.set(String(p.id), p.name || p.displayName || p.id);
-          // preencher select de filtro
-          const sel = document.getElementById('playerFilter');
-          for (const p of list) {
-            const opt = document.createElement('option');
-            opt.value = String(p.id);
-            opt.textContent = p.name || p.displayName || p.id;
-            sel.appendChild(opt);
-          }
-        } catch (e) {/* ignore */}
-      }
-
-      // Busca dados do arquivo diário (formato DDMMYY.json, novo formato)
-      async function fetchDailyData(isoDate) {
-        const filename = convertToDDMMYY(isoDate);
-        const url = `${BUCKET_URL}/${filename}.json`;
-        try {
-          const res = await fetch(url);
-          if (res.ok) {
-            const data = await res.json();
-            return data; // novo formato: {playerId: {game: minutos, ...}, ...}
-          }
-        } catch (e) { /* ignore */ }
-        return {};
-      }
-
-      // Renderiza relatório agregando minutos por jogador por jogo
-      async function loadReport() {
-        const dateIso = document.getElementById('date').value;
-        if (!dateIso) return alert('Escolha uma data!');
-        const playerFilter = document.getElementById('playerFilter').value;
-
-        const dailyData = await fetchDailyData(dateIso);
-        let html = '<h3>Tempo por jogador e por jogo</h3><div class="table-wrap"><table><thead><tr><th>Jogador</th><th>Jogo</th><th>Minutos</th><th>Horas</th></tr></thead><tbody>';
-        let dataFound = false;
-        for (const [playerId, games] of Object.entries(dailyData)) {
-          if (playerFilter && playerId !== playerFilter) continue;
-          const playerName = playersMap.get(playerId) || playerId;
-          for (const [game, minutes] of Object.entries(games)) {
-            dataFound = true;
-            html += `<tr><td>${playerName}</td><td>${game}</td><td>${minutes}</td><td>${(minutes/60).toFixed(2)}</td></tr>`;
-          }
+    // Carrega lista de jogadores do arquivo local (opcional, exibe nomes ao invés de IDs)
+    let playersMap = new Map();
+    async function loadPlayers() {
+      try {
+        const res = await fetch('./players.json');
+        if (!res.ok) return;
+        const list = await res.json();
+        for (const p of list) playersMap.set(`Player ${p.id}`, p.name || p.displayName || p.id);
+        // preencher select de filtro
+        const sel = document.getElementById('playerFilter');
+        for (const p of list) {
+          const opt = document.createElement('option');
+          opt.value = `Player ${p.id}`;
+          opt.textContent = p.name || p.displayName || p.id;
+          sel.appendChild(opt);
         }
-        html += '</tbody></table></div>';
-        if (!dataFound) html += '<p style="margin-top:16px;">Nenhum dado para esta data/jogador.</p>';
-        document.getElementById('reportArea').innerHTML = html;
-      }
+      } catch (e) {/* ignore */}
+    }
 
-      function setTodayInputs() {
-        const now = new Date();
-        const pad = (n) => n.toString().padStart(2, '0');
-        const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-        document.getElementById('date').value = iso;
-        loadReport();
-      }
-
-      // Exporta CSV da tabela
-      function exportCSV() {
-        const table = document.querySelector('#reportArea table');
-        if (!table) return alert('Nada para exportar');
-        const rows = [];
-        for (const tr of table.querySelectorAll('tr')) {
-          const cols = Array.from(tr.querySelectorAll('th,td')).map((n) => n.textContent.trim());
-          rows.push(cols.join(','));
+    // Busca dados do arquivo diário (formato DDMMYY.json, formato array)
+    async function fetchDailyData(isoDate) {
+      const filename = convertToDDMMYY(isoDate);
+      const url = `${BUCKET_URL}/${filename}.json`;
+      try {
+        const res = await fetch(url);
+        if (res.ok) {
+          return await res.json();
         }
-        const csv = rows.join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `report-${document.getElementById('date').value || 'report'}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
+      } catch (e) { /* ignore */ }
+      return [];
+    }
 
-      function printReport() {
-        window.print();
+    // Agrega minutos por jogador/jogo
+    function aggregateMinutes(data) {
+      const minutes = {};
+      for (const entry of data) {
+        if (entry.status !== 'Jogando') continue;
+        const player = entry.player;
+        const jogo = entry.jogo;
+        const key = `${player}|${jogo}`;
+        if (!minutes[key]) {
+          minutes[key] = { player, jogo, minutos: 0 };
+        }
+        minutes[key].minutos += 5; // 5 minutos por execução
       }
+      return Object.values(minutes);
+    }
 
-      // Inicializa a página
-      setTodayInputs();
-      loadPlayers();
-    </script>
-  </body>
+    async function loadReport() {
+      const dateIso = document.getElementById('date').value;
+      if (!dateIso) return alert('Escolha uma data!');
+      const playerFilter = document.getElementById('playerFilter').value;
+
+      const dailyData = await fetchDailyData(dateIso);
+      const aggregated = aggregateMinutes(dailyData);
+
+      let html = '<h3>Tempo por jogador e por jogo</h3><div class="table-wrap"><table><thead><tr><th>Jogador</th><th>Jogo</th><th>Minutos</th><th>Horas</th></tr></thead><tbody>';
+      let found = false;
+      for (const item of aggregated) {
+        if (playerFilter && item.player !== playerFilter) continue;
+        const playerName = playersMap.get(item.player) || item.player;
+        html += `<tr><td>${playerName}</td><td>${item.jogo}</td><td>${item.minutos}</td><td>${(item.minutos/60).toFixed(2)}</td></tr>`;
+        found = true;
+      }
+      html += '</tbody></table></div>';
+      if (!found) html += '<p style="margin-top:16px;">Nenhum dado para esta data/jogador.</p>';
+      document.getElementById('reportArea').innerHTML = html;
+    }
+
+    function setTodayInputs() {
+      const now = new Date();
+      const pad = (n) => n.toString().padStart(2, '0');
+      const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+      document.getElementById('date').value = iso;
+      loadReport();
+    }
+
+    function exportCSV() {
+      const table = document.querySelector('#reportArea table');
+      if (!table) return alert('Nada para exportar');
+      const rows = [];
+      for (const tr of table.querySelectorAll('tr')) {
+        const cols = Array.from(tr.querySelectorAll('th,td')).map((n) => n.textContent.trim());
+        rows.push(cols.join(','));
+      }
+      const csv = rows.join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `report-${document.getElementById('date').value || 'report'}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function printReport() {
+      window.print();
+    }
+
+    // Inicializa a página
+    setTodayInputs();
+    loadPlayers();
+  </script>
+</body>
 </html>
