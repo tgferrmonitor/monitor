@@ -381,13 +381,19 @@
       async function fetchDailyData(isoDate) {
         const filename = convertToDDMMYY(isoDate);
         const url = `${BUCKET_URL}/${filename}.json`;
+        console.log('🔍 Tentando buscar:', url);
         try {
           const res = await fetch(url);
+          console.log('📡 Response status:', res.status, res.statusText);
           if (res.ok) {
-            return await res.json();
+            const data = await res.json();
+            console.log('✅ Dados carregados:', data.length, 'entradas');
+            return data;
+          } else {
+            console.error('❌ Erro HTTP:', res.status, res.statusText);
           }
         } catch (e) {
-          /* ignore */
+          console.error('❌ Erro na requisição:', e);
         }
         return [];
       }
