@@ -1,5 +1,6 @@
 import https from 'https';
 import fetch from 'node-fetch';
+import nodemailer from 'nodemailer';
 import {
   S3Client,
   PutObjectCommand,
@@ -41,6 +42,11 @@ const s3Client = new S3Client({
 const PLAYERS = JSON.parse(process.env.PLAYERS || '[]');
 const ROBLOSECURITY = process.env.ROBLOSECURITY;
 const TZ_OFFSET_MINUTES = parseInt(process.env.TZ_OFFSET_MINUTES || '0', 10);
+
+// Configurações de email
+const EMAIL_USER = process.env.EMAIL_USER || process.env.S3_EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS || process.env.S3_EMAIL_PASS;
+const EMAIL_TO = process.env.EMAIL_TO || process.env.S3_EMAIL_TO;
 
 // Carregar mapeamento de players de arquivo local (se existir)
 let playersMap = new Map();
@@ -131,10 +137,14 @@ async function saveDailyData(filename, presenceData) {
     for await (const chunk of stream) chunks.push(Buffer.from(chunk));
     const text = Buffer.concat(chunks).toString('utf8');
     existingData = JSON.parse(text) || [];
+    console.log(
+      `📂 Dados existentes carregados: ${existingData.length} entradas`
+    );
   } catch (err) {
     if (err.name !== 'NoSuchKey') {
       console.error('Erro ao ler dados existentes:', err);
     }
+    console.log('📂 Arquivo não existe, iniciando novo dia');
     // Se arquivo não existe, continuar com array vazio
   }
 
@@ -154,6 +164,18 @@ async function saveDailyData(filename, presenceData) {
     statusMap
   );
 
+  // Detectar mudanças para notificação
+  console.log('🔍 Detectando mudanças para notificação...');
+  const changes = detectChanges(existingData, updatedData);
+
+  // Enviar notificação se houver mudanças
+  if (changes.length > 0) {
+    console.log(
+      `📧 ${changes.length} mudança(s) detectada(s), enviando email...`
+    );
+    await sendEmailNotification(changes);
+  }
+
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET,
     Key: filename,
@@ -167,10 +189,6 @@ async function saveDailyData(filename, presenceData) {
     console.log(
       `✅ Dados salvos: ${filename} (${updatedData.length} entradas)`
     );
-
-    // Salvar também uma cópia local para o script de notificação
-    console.log('📂 Iniciando salvamento local...');
-    await saveDailyLocal(updatedData);
     console.log('🎯 Processo de salvamento completo!');
   } catch (err) {
     console.error('Erro ao enviar para S3:', err);
@@ -262,40 +280,294 @@ async function processPlayerData(existingData, presenceData, statusMap) {
   return updatedData;
 }
 
-async function saveDailyLocal(data) {
-  try {
-    console.log('💾 Iniciando salvamento local...');
-    const fs = await import('fs/promises');
-
-    // Salvar na raiz para o script de notificação
-    await fs.writeFile('./daily.json', JSON.stringify(data, null, 2));
-    console.log('📝 Arquivo daily.json local salvo');
-
-    // Criar diretório .github/scripts se não existir
-    try {
-      await fs.mkdir('./.github/scripts', { recursive: true });
-    } catch (err) {
-      // Diretório já existe
-    }
-
-    // Salvar também em .github/scripts para compatibilidade
-    await fs.writeFile(
-      './.github/scripts/daily.json',
-      JSON.stringify(data, null, 2)
-    );
-    console.log('📝 Arquivo daily.json salvo em .github/scripts/');
-    console.log('💾 Salvamento local concluído');
-  } catch (err) {
-    console.error('⚠️ Erro ao salvar arquivo daily.json local:', err);
-  }
-}
-
 // Funções auxiliares removidas - usando abordagem simplificada
 
 function formatDate(date) {
   const pad = (n) => n.toString().padStart(2, '0');
   const year = date.getFullYear().toString().slice(-2); // YY format
   return `${pad(date.getDate())}${pad(date.getMonth() + 1)}${year}`;
+}
+
+function formatDateTime(dateString) {
+  if (!dateString || dateString === 'undefined') {
+    return new Date().toLocaleString('pt-BR');
+  }
+  try {
+    return new Date(dateString).toLocaleString('pt-BR');
+  } catch (e) {
+    return new Date().toLocaleString('pt-BR');
+  }
+}
+
+function detectChanges(existingData, newData) {
+  const changes = [];
+  const currentTime = new Date().toISOString();
+
+  for (const newEntry of newData) {
+    const existingEntry = existingData.find(
+      (entry) => entry.player === newEntry.player
+    );
+
+    if (!existingEntry) {
+      // Player novo
+      changes.push({
+        player: newEntry.player,
+        changeType: 'new',
+        from: { status: 'N/A', jogo: 'N/A' },
+        to: { status: newEntry.status, jogo: newEntry.jogo },
+        timestamp: currentTime,
+      });
+    } else if (
+      existingEntry.status !== newEntry.status ||
+      existingEntry.jogo !== newEntry.jogo
+    ) {
+      // Mudança detectada
+      changes.push({
+        player: newEntry.player,
+        changeType: 'change',
+        from: { status: existingEntry.status, jogo: existingEntry.jogo },
+        to: { status: newEntry.status, jogo: newEntry.jogo },
+        timestamp: currentTime,
+      });
+    }
+  }
+
+  return changes;
+}
+
+async function sendEmailNotification(changes) {
+  if (!EMAIL_USER || !EMAIL_PASS || !EMAIL_TO || changes.length === 0) {
+    if (changes.length === 0) {
+      console.log('📧 Nenhuma mudança detectada, não enviando email');
+    } else {
+      console.log(
+        '📧 Credenciais de email não configuradas, pulando notificação'
+      );
+    }
+    return;
+  }
+
+  try {
+    console.log('📧 Preparando email de notificação...');
+
+    // Monta corpo do e-mail
+    let corpo = '🎮 RELATÓRIO DE ATIVIDADE ROBLOX 🎮\n';
+    corpo += '='.repeat(50) + '\n\n';
+
+    if (changes.length === 1) {
+      corpo += '📊 1 mudança de status detectada:\n\n';
+    } else {
+      corpo += `📊 ${changes.length} mudanças de status detectadas:\n\n`;
+    }
+
+    for (const change of changes) {
+      const playerName = getPlayerName(change.player.replace('Player ', ''));
+
+      corpo += `👤 JOGADOR: ${playerName}\n`;
+      corpo += `📅 QUANDO: ${formatDateTime(change.timestamp)}\n`;
+
+      if (change.changeType === 'new') {
+        corpo += `🆕 NOVO PLAYER: ${change.to.status}\n`;
+      } else {
+        corpo += `🔄 MUDANÇA: ${change.from.status} → ${change.to.status}\n`;
+      }
+
+      if (change.to.jogo !== 'N/A' && change.to.jogo !== 'Website') {
+        corpo += `🎯 JOGO: ${change.to.jogo}\n`;
+      }
+
+      if (change.to.status === 'Jogando' && change.to.jogo !== 'N/A') {
+        corpo += `⏱️ ATIVIDADE: Jogando ativamente\n`;
+      } else if (change.to.status === 'Online') {
+        corpo += `🟢 ATIVIDADE: Online no Roblox\n`;
+      } else if (change.to.status === 'Offline') {
+        corpo += `🔴 ATIVIDADE: Desconectado\n`;
+      }
+
+      corpo += '\n' + '-'.repeat(40) + '\n\n';
+    }
+
+    corpo += `🕐 Relatório gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+    corpo += '🤖 Monitor Roblox - Sistema Automático';
+
+    // Configurar transporter
+    const transporter = nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: EMAIL_USER,
+        pass: EMAIL_PASS,
+      },
+    });
+
+    // Enviar email
+    await transporter.sendMail({
+      from: `"🎮 Monitor Roblox" <${EMAIL_USER}>`,
+      to: EMAIL_TO,
+      subject: `🔔 Atividade Roblox Detectada - ${changes.length} mudança(s)`,
+      text: corpo,
+    });
+
+    console.log('📧 Email enviado com sucesso!');
+  } catch (error) {
+    console.error('❌ Erro ao enviar email:', error);
+  }
+}
+
+// ===== FUNCIONALIDADE DE NOTIFICAÇÃO POR EMAIL =====
+
+async function loadPreviousStatus() {
+  try {
+    const statusFilename = 'status_anterior.json';
+    const existing = await s3Client.send(
+      new GetObjectCommand({
+        Bucket: process.env.S3_BUCKET,
+        Key: statusFilename,
+      })
+    );
+    const stream = existing.Body;
+    const chunks = [];
+    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+    const text = Buffer.concat(chunks).toString('utf8');
+    return JSON.parse(text) || {};
+  } catch (err) {
+    if (err.name !== 'NoSuchKey') {
+      console.log('ℹ️ Erro ao carregar status anterior:', err.message);
+    }
+    return {};
+  }
+}
+
+async function savePreviousStatus(statusData) {
+  try {
+    const statusFilename = 'status_anterior.json';
+    const command = new PutObjectCommand({
+      Bucket: process.env.S3_BUCKET,
+      Key: statusFilename,
+      Body: JSON.stringify(statusData, null, 2),
+      ContentType: 'application/json',
+    });
+    await s3Client.send(command);
+    console.log('💾 Status anterior salvo no S3');
+  } catch (err) {
+    console.error('⚠️ Erro ao salvar status anterior:', err);
+  }
+}
+
+async function detectChangesAndNotify(currentData) {
+  if (!EMAIL_USER || !EMAIL_PASS || !EMAIL_TO) {
+    console.log(
+      'ℹ️ Credenciais de email não configuradas, pulando notificações'
+    );
+    return;
+  }
+
+  console.log('🔍 Verificando mudanças de status...');
+
+  const statusAnterior = await loadPreviousStatus();
+  const mudancas = [];
+
+  for (const entry of currentData) {
+    const playerName = entry.player;
+    const statusNovo = entry.status;
+    const jogoNovo = entry.jogo;
+    const tsNovo = entry.updatedAt;
+    const chave = playerName;
+
+    const anterior = statusAnterior[chave];
+    if (
+      !anterior ||
+      statusNovo !== anterior.status ||
+      jogoNovo !== anterior.jogo
+    ) {
+      // Mudou!
+      mudancas.push({
+        jogador: playerName,
+        statusNovo,
+        jogoNovo,
+        tsNovo,
+        statusAnt: anterior ? anterior.status : 'Primeira detecção',
+        jogoAnt: anterior ? anterior.jogo : 'N/A',
+      });
+
+      // Atualizar status salvo
+      statusAnterior[chave] = {
+        status: statusNovo,
+        jogo: jogoNovo,
+        timestamp: tsNovo,
+      };
+    }
+  }
+
+  // Salvar status atualizado
+  await savePreviousStatus(statusAnterior);
+
+  if (mudancas.length === 0) {
+    console.log('ℹ️ Nenhuma mudança de status detectada');
+    return;
+  }
+
+  console.log(
+    `📧 ${mudancas.length} mudança(s) detectada(s), enviando email...`
+  );
+  await enviarNotificacao(mudancas);
+}
+
+async function enviarNotificacao(mudancas) {
+  try {
+    // Montar corpo do email
+    let corpo = '🎮 RELATÓRIO DE ATIVIDADE ROBLOX 🎮\n';
+    corpo += '='.repeat(50) + '\n\n';
+
+    if (mudancas.length === 1) {
+      corpo += '📊 1 mudança de status detectada:\n\n';
+    } else {
+      corpo += `📊 ${mudancas.length} mudanças de status detectadas:\n\n`;
+    }
+
+    for (const m of mudancas) {
+      corpo += `👤 JOGADOR: ${m.jogador}\n`;
+      corpo += `📅 QUANDO: ${formatDateTime(m.tsNovo)}\n`;
+      corpo += `🔄 MUDANÇA: ${m.statusAnt} → ${m.statusNovo}\n`;
+
+      if (m.jogoNovo !== 'N/A' && m.jogoNovo !== 'Website') {
+        corpo += `🎯 JOGO: ${m.jogoNovo}\n`;
+      }
+
+      if (m.statusNovo === 'Jogando' && m.jogoNovo !== 'N/A') {
+        corpo += `⏱️ ATIVIDADE: Jogando ativamente\n`;
+      } else if (m.statusNovo === 'Online') {
+        corpo += `🟢 ATIVIDADE: Online no Roblox\n`;
+      } else if (m.statusNovo === 'Offline') {
+        corpo += `🔴 ATIVIDADE: Desconectado\n`;
+      }
+
+      corpo += '\n' + '-'.repeat(40) + '\n\n';
+    }
+
+    corpo += `🕐 Relatório gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+    corpo += '🤖 Monitor Roblox - Sistema Automático';
+
+    // Configurar transporter
+    const transporter = nodemailer.createTransporter({
+      service: 'gmail',
+      auth: {
+        user: EMAIL_USER,
+        pass: EMAIL_PASS,
+      },
+    });
+
+    // Enviar email
+    await transporter.sendMail({
+      from: `"🎮 Monitor Roblox" <${EMAIL_USER}>`,
+      to: EMAIL_TO,
+      subject: `🔔 Atividade Roblox Detectada - ${mudancas.length} mudança(s)`,
+      text: corpo,
+    });
+
+    console.log('📧 Email de notificação enviado com sucesso!');
+  } catch (err) {
+    console.error('❌ Erro ao enviar email:', err);
+  }
 }
 
 async function main() {
