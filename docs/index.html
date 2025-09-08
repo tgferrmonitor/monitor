@@ -147,6 +147,25 @@
         }
       }
 
+      // Gera histórico do dia para cada player
+      function buildHistory(data) {
+        const history = {};
+        for (const entry of data) {
+          const player = entry.player;
+          if (!history[player]) history[player] = [];
+          history[player].push({
+            status: entry.status,
+            jogo: entry.jogo,
+            minutos: entry.countMinutes || 0,
+            hora: new Date(entry.updatedAt).toLocaleTimeString('pt-BR', {
+              hour: '2-digit',
+              minute: '2-digit',
+            }),
+          });
+        }
+        return history;
+      }
+
       async function loadReport() {
         const dateIso = document.getElementById('date').value;
         if (!dateIso) return alert('Escolha uma data!');
@@ -154,10 +173,12 @@
 
         const dailyData = await fetchDailyData(dateIso);
         const aggregated = aggregateMinutes(dailyData);
+        const history = buildHistory(dailyData);
 
         // Chama notificação
         notifyOnlinePlayers(dailyData);
 
+        // Tabela principal
         let html =
           '<h3>Tempo por jogador, jogo e status</h3><div class="table-wrap"><table><thead><tr><th>Jogador</th><th>Jogo</th><th>Status</th><th>Minutos</th><th>Horas</th></tr></thead><tbody>';
         let found = false;
@@ -185,6 +206,27 @@
         if (!found)
           html +=
             '<p style="margin-top:16px;">Nenhum dado para esta data/jogador.</p>';
+        // Histórico do dia
+        html +=
+          '<h3 style="margin-top:32px;">Histórico do dia por jogador</h3>';
+        for (const [player, events] of Object.entries(history)) {
+          const playerName = playersMap.get(player) || player;
+          html += `<div class="card" style="margin-bottom:16px;"><strong>${playerName}</strong><ul style="margin-top:8px;">`;
+          for (const ev of events) {
+            let badge = '';
+            if (ev.status === 'Online')
+              badge = '<span class="badge online">Online</span>';
+            else if (ev.status === 'Jogando')
+              badge = '<span class="badge ingame">Jogando</span>';
+            else if (ev.status === 'No Studio')
+              badge = '<span class="badge instudio">Studio</span>';
+            else if (ev.status === 'Offline')
+              badge = '<span class="badge offline">Offline</span>';
+            else badge = `<span class="badge">${ev.status}</span>`;
+            html += `<li>${ev.hora} - ${badge} - <span class="muted">${ev.jogo}</span> - <span class="muted">${ev.minutos} min</span></li>`;
+          }
+          html += '</ul></div>';
+        }
         document.getElementById('reportArea').innerHTML = html;
       }
 
