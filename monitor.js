@@ -392,7 +392,7 @@ async function sendEmailNotification(changes) {
     corpo += '🤖 Monitor Roblox - Sistema Automático';
 
     // Configurar transporter
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: EMAIL_USER,
@@ -549,7 +549,7 @@ async function enviarNotificacao(mudancas) {
     corpo += '🤖 Monitor Roblox - Sistema Automático';
 
     // Configurar transporter
-    const transporter = nodemailer.createTransporter({
+    const transporter = nodemailer.createTransport({
       service: 'gmail',
       auth: {
         user: EMAIL_USER,
