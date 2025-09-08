@@ -55,6 +55,52 @@
         .date-display {
             color: var(--gray);
             font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            align-items: center;
+        }
+        
+        .filter-group {
+            display: flex;
+            flex-direction: column;
+            min-width: 200px;
+        }
+        
+        .filter-group label {
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .filter-group select, .filter-group input {
+            padding: 10px;
+            border-radius: 6px;
+            border: 1px solid #ddd;
+            font-size: 1rem;
+        }
+        
+        .btn {
+            padding: 10px 20px;
+            background: var(--secondary);
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background 0.3s;
+        }
+        
+        .btn:hover {
+            background: #2980b9;
         }
         
         .summary-cards {
@@ -298,6 +344,11 @@
             .timeline-connector {
                 left: 79px;
             }
+            
+            .filters {
+                flex-direction: column;
+                align-items: stretch;
+            }
         }
     </style>
 </head>
@@ -305,8 +356,27 @@
     <div class="container">
         <header>
             <h1>Relatório de Jogadores</h1>
-            <div class="date-display">7 de Setembro de 2025</div>
+            <div class="date-display" id="currentDate">Carregando data...</div>
         </header>
+        
+        <div class="filters">
+            <div class="filter-group">
+                <label for="dateFilter">Data:</label>
+                <input type="date" id="dateFilter">
+            </div>
+            
+            <div class="filter-group">
+                <label for="playerFilter">Jogador:</label>
+                <select id="playerFilter">
+                    <option value="all">Todos os jogadores</option>
+                </select>
+            </div>
+            
+            <div class="filter-group">
+                <label>&nbsp;</label>
+                <button class="btn" id="applyFilters">Aplicar Filtros</button>
+            </div>
+        </div>
         
         <div class="summary-cards">
             <div class="card">
@@ -316,8 +386,8 @@
                         <i class="fas fa-users"></i>
                     </div>
                 </div>
-                <div class="highlight">2</div>
-                <p>jogadores tiveram atividade hoje</p>
+                <div class="highlight" id="activePlayers">0</div>
+                <p>jogadores tiveram atividade</p>
             </div>
             
             <div class="card">
@@ -327,7 +397,7 @@
                         <i class="fas fa-clock"></i>
                     </div>
                 </div>
-                <div class="highlight">4h 20m</div>
+                <div class="highlight" id="totalTime">0h 0m</div>
                 <p>de jogo combinados</p>
             </div>
             
@@ -338,86 +408,22 @@
                         <i class="fas fa-trophy"></i>
                     </div>
                 </div>
-                <div class="highlight">Player 2616521101</div>
-                <p>2h 56m jogados</p>
+                <div class="highlight" id="topPlayer">Nenhum</div>
+                <p id="topPlayerTime">0h 0m jogados</p>
             </div>
         </div>
         
         <div class="card">
             <h2 class="card-title">Ranking de Jogadores</h2>
-            <div class="player-list">
+            <div class="player-list" id="playersRanking">
                 <div class="player-item">
                     <div class="player-info">
                         <div class="player-avatar">
                             <i class="fas fa-user"></i>
                         </div>
                         <div class="player-details">
-                            <div class="player-name">Player 2616521101</div>
-                            <div class="player-id">ID: 2616521101</div>
-                        </div>
-                    </div>
-                    <div class="player-stats">
-                        <div class="player-time">2h 56m</div>
-                        <span class="player-status status-playing">Jogando</span>
-                    </div>
-                </div>
-                
-                <div class="player-item">
-                    <div class="player-info">
-                        <div class="player-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="player-details">
-                            <div class="player-name">Player 7738147772</div>
-                            <div class="player-id">ID: 7738147772</div>
-                        </div>
-                    </div>
-                    <div class="player-stats">
-                        <div class="player-time">1h 23m</div>
-                        <span class="player-status status-offline">Offline</span>
-                    </div>
-                </div>
-                
-                <div class="player-item">
-                    <div class="player-info">
-                        <div class="player-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="player-details">
-                            <div class="player-name">Player 8631412913</div>
-                            <div class="player-id">ID: 8631412913</div>
-                        </div>
-                    </div>
-                    <div class="player-stats">
-                        <div class="player-time">0m</div>
-                        <span class="player-status status-offline">Offline</span>
-                    </div>
-                </div>
-                
-                <div class="player-item">
-                    <div class="player-info">
-                        <div class="player-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="player-details">
-                            <div class="player-name">Player 9005903775</div>
-                            <div class="player-id">ID: 9005903775</div>
-                        </div>
-                    </div>
-                    <div class="player-stats">
-                        <div class="player-time">0m</div>
-                        <span class="player-status status-offline">Offline</span>
-                    </div>
-                </div>
-                
-                <div class="player-item">
-                    <div class="player-info">
-                        <div class="player-avatar">
-                            <i class="fas fa-user"></i>
-                        </div>
-                        <div class="player-details">
-                            <div class="player-name">Player 8419659295</div>
-                            <div class="player-id">ID: 8419659295</div>
+                            <div class="player-name">Nenhum jogador encontrado</div>
+                            <div class="player-id">Selecione uma data</div>
                         </div>
                     </div>
                     <div class="player-stats">
@@ -430,223 +436,321 @@
         
         <div class="timeline">
             <h2 class="timeline-title">Linha do Tempo de Atividades</h2>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">01:37</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 7738147772</span>
-                        <span class="status-badge status-online">Online</span>
+            <div id="timelineContent">
+                <div class="timeline-item">
+                    <div class="timeline-time">--:--</div>
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="status-change">
+                            <span class="player-name">Nenhuma atividade</span>
+                            <span class="status-badge status-offline">Offline</span>
+                        </div>
+                        <div>Selecione uma data para ver as atividades</div>
                     </div>
-                    <div>Conectado via Website</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">02:24</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 7738147772</span>
-                        <span class="status-badge status-offline">Offline</span>
-                    </div>
-                    <div>Desconectado via Website</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">11:10</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 7738147772</span>
-                        <span class="status-badge status-online">Online</span>
-                    </div>
-                    <div>Conectado via Website</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">11:21</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 7738147772</span>
-                        <span class="status-badge status-offline">Offline</span>
-                    </div>
-                    <div>Desconectado via Website</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">13:47</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 2616521101</span>
-                        <span class="status-badge status-online">Online</span>
-                    </div>
-                    <div>Conectado via Website</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">13:54</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 2616521101</span>
-                        <span class="status-badge status-offline">Offline</span>
-                    </div>
-                    <div>Desconectado via Website</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">16:52</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 2616521101</span>
-                        <span class="status-badge status-online">Online</span>
-                    </div>
-                    <div>Conectado via Website</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">16:59</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 2616521101</span>
-                        <span class="status-badge status-playing">Jogando</span>
-                    </div>
-                    <div class="game-name">[🔪Slasher] Abandonado</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">17:51</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 2616521101</span>
-                        <span class="status-badge status-playing">Jogando</span>
-                    </div>
-                    <div class="game-name">Slayer Tycoon (v1.8)</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">18:40</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 2616521101</span>
-                        <span class="status-badge status-playing">Jogando</span>
-                    </div>
-                    <div class="game-name">Evoluir [Sniffer!]</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">18:49</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 2616521101</span>
-                        <span class="status-badge status-online">Online</span>
-                    </div>
-                    <div>Conectado via Website</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">18:53</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 7738147772</span>
-                        <span class="status-badge status-online">Online</span>
-                    </div>
-                    <div>Conectado via Website</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">18:53</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 2616521101</span>
-                        <span class="status-badge status-offline">Offline</span>
-                    </div>
-                    <div>Desconectado via Website</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">19:20</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 7738147772</span>
-                        <span class="status-badge status-offline">Offline</span>
-                    </div>
-                    <div>Desconectado via Website</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">19:38</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 2616521101</span>
-                        <span class="status-badge status-playing">Jogando</span>
-                    </div>
-                    <div class="game-name">[🔪Slasher] Abandonado</div>
-                    <div class="timeline-connector"></div>
-                </div>
-            </div>
-            
-            <div class="timeline-item">
-                <div class="timeline-time">20:31</div>
-                <div class="timeline-dot"></div>
-                <div class="timeline-content">
-                    <div class="status-change">
-                        <span class="player-name">Player 2616521101</span>
-                        <span class="status-badge status-offline">Offline</span>
-                    </div>
-                    <div>Desconectado via Website</div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Destaque o jogador com mais tempo
+        // Dados dos jogadores
+        const players = [
+            { id: 7738147772, name: "paimeureipai", displayName: "tiagifiwhwhdoieg2123" },
+            { id: 8631412913, name: "SuperHugo022", displayName: "SuperHugo022" },
+            { id: 9005903775, name: "hegejeg78", displayName: "hegejeg78" },
+            { id: 8419659295, name: "udhdu778igdjv", displayName: "udhdu778igdjv" },
+            { id: 2616521101, name: "garagemer79", displayName: "mOwly_79" }
+        ];
+
+        // Dados de exemplo (substituir com seus dados reais)
+        const sampleData = [
+            { player: "Player 7738147772", status: "Online", jogo: "Website", timestamp: "2025-09-07T01:37:42.228Z" },
+            { player: "Player 8631412913", status: "Offline", jogo: "Website", timestamp: "2025-09-07T01:37:42.228Z" },
+            { player: "Player 9005903775", status: "Offline", jogo: "Website", timestamp: "2025-09-07T01:37:42.228Z" },
+            { player: "Player 8419659295", status: "Offline", jogo: "Website", timestamp: "2025-09-07T01:37:42.228Z" },
+            { player: "Player 2616521101", status: "Offline", jogo: "Website", timestamp: "2025-09-07T01:37:42.228Z" },
+            { player: "Player 7738147772", status: "Offline", jogo: "Website", timestamp: "2025-09-07T02:24:20.668Z" },
+            { player: "Player 7738147772", status: "Online", jogo: "Website", timestamp: "2025-09-07T11:10:47.729Z" },
+            { player: "Player 7738147772", status: "Offline", jogo: "Website", timestamp: "2025-09-07T11:21:34.892Z" },
+            { player: "Player 2616521101", status: "Online", jogo: "Website", timestamp: "2025-09-07T13:47:27.083Z" },
+            { player: "Player 2616521101", status: "Offline", jogo: "Website", timestamp: "2025-09-07T13:54:22.114Z" },
+            { player: "Player 2616521101", status: "Online", jogo: "Website", timestamp: "2025-09-07T16:52:54.425Z" },
+            { player: "Player 2616521101", status: "Jogando", jogo: "[🔪Slasher] Abandonado", timestamp: "2025-09-07T16:59:49.597Z" },
+            { player: "Player 2616521101", status: "Jogando", jogo: "Slayer Tycoon (v1.8)", timestamp: "2025-09-07T17:51:14.053Z" },
+            { player: "Player 2616521101", status: "Jogando", jogo: "Evoluir [Sniffer!]", timestamp: "2025-09-07T18:40:49.615Z" },
+            { player: "Player 2616521101", status: "Online", jogo: "Website", timestamp: "2025-09-07T18:49:17.803Z" },
+            { player: "Player 7738147772", status: "Online", jogo: "Website", timestamp: "2025-09-07T18:53:58.285Z" },
+            { player: "Player 2616521101", status: "Offline", jogo: "Website", timestamp: "2025-09-07T18:53:58.285Z" },
+            { player: "Player 7738147772", status: "Offline", jogo: "Website", timestamp: "2025-09-07T19:20:21.110Z" },
+            { player: "Player 2616521101", status: "Jogando", jogo: "[🔪Slasher] Abandonado", timestamp: "2025-09-07T19:38:00.106Z" },
+            { player: "Player 2616521101", status: "Offline", jogo: "Website", timestamp: "2025-09-07T20:31:01.353Z" }
+        ];
+
+        // Inicialização
         document.addEventListener('DOMContentLoaded', function() {
-            const topPlayer = document.querySelector('.player-item:first-child');
-            topPlayer.style.boxShadow = '0 0 0 2px #f39c12';
-            topPlayer.style.transition = 'box-shadow 0.3s ease';
+            // Configurar data atual como padrão
+            const today = new Date();
+            const todayFormatted = today.toISOString().split('T')[0];
+            document.getElementById('dateFilter').value = todayFormatted;
+            document.getElementById('currentDate').textContent = formatDate(todayFormatted);
+            
+            // Preencher dropdown de jogadores
+            const playerFilter = document.getElementById('playerFilter');
+            players.forEach(player => {
+                const option = document.createElement('option');
+                option.value = player.id;
+                option.textContent = player.displayName;
+                playerFilter.appendChild(option);
+            });
+            
+            // Carregar dados iniciais
+            loadData();
+            
+            // Configurar evento do botão
+            document.getElementById('applyFilters').addEventListener('click', loadData);
         });
+
+        // Função para carregar dados com base nos filtros
+        function loadData() {
+            const selectedDate = document.getElementById('dateFilter').value;
+            const selectedPlayer = document.getElementById('playerFilter').value;
+            
+            document.getElementById('currentDate').textContent = formatDate(selectedDate);
+            
+            // Filtrar dados pela data selecionada
+            const filteredByDate = sampleData.filter(item => {
+                const itemDate = new Date(item.timestamp).toISOString().split('T')[0];
+                return itemDate === selectedDate;
+            });
+            
+            // Filtrar por jogador se necessário
+            let filteredData = filteredByDate;
+            if (selectedPlayer !== 'all') {
+                filteredData = filteredByDate.filter(item => 
+                    item.player === `Player ${selectedPlayer}`
+                );
+            }
+            
+            // Processar dados e atualizar a interface
+            processData(filteredData);
+        }
+
+        // Função para processar os dados e calcular estatísticas
+        function processData(data) {
+            if (data.length === 0) {
+                updateUI([], []);
+                return;
+            }
+            
+            // Ordenar por timestamp
+            data.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+            
+            // Calcular tempo de jogo por jogador
+            const playerStats = {};
+            
+            data.forEach((event, index) => {
+                const playerId = event.player.split(' ')[1];
+                const player = players.find(p => p.id == playerId);
+                const displayName = player ? player.displayName : `Player ${playerId}`;
+                
+                if (!playerStats[playerId]) {
+                    playerStats[playerId] = {
+                        id: playerId,
+                        name: displayName,
+                        totalTime: 0,
+                        lastStatus: event.status,
+                        lastTimestamp: new Date(event.timestamp),
+                        sessions: []
+                    };
+                }
+                
+                const stats = playerStats[playerId];
+                
+                // Se era "Jogando" e agora mudou de status, calcular tempo da sessão
+                if (stats.lastStatus === 'Jogando' && event.status !== 'Jogando') {
+                    const sessionStart = stats.lastTimestamp;
+                    const sessionEnd = new Date(event.timestamp);
+                    const sessionDuration = (sessionEnd - sessionStart) / 1000 / 60; // em minutos
+                    
+                    stats.totalTime += sessionDuration;
+                    stats.sessions.push({
+                        start: sessionStart,
+                        end: sessionEnd,
+                        duration: sessionDuration,
+                        game: stats.lastGame
+                    });
+                }
+                
+                // Atualizar último status e timestamp
+                stats.lastStatus = event.status;
+                stats.lastTimestamp = new Date(event.timestamp);
+                
+                // Se começou a jogar, guardar qual jogo
+                if (event.status === 'Jogando') {
+                    stats.lastGame = event.jogo;
+                }
+            });
+            
+            // Converter para array e ordenar por tempo total
+            const playersArray = Object.values(playerStats)
+                .filter(player => player.totalTime > 0)
+                .sort((a, b) => b.totalTime - a.totalTime);
+            
+            // Encontrar jogador destaque
+            const topPlayer = playersArray.length > 0 ? playersArray[0] : null;
+            
+            // Calcular tempo total
+            const totalTime = playersArray.reduce((sum, player) => sum + player.totalTime, 0);
+            
+            // Atualizar UI
+            updateUI(playersArray, data, topPlayer, totalTime);
+        }
+
+        // Função para atualizar a interface com os dados processados
+        function updateUI(playersArray, timelineData, topPlayer = null, totalTime = 0) {
+            // Atualizar cartões de resumo
+            document.getElementById('activePlayers').textContent = playersArray.length;
+            
+            const totalHours = Math.floor(totalTime / 60);
+            const totalMinutes = Math.round(totalTime % 60);
+            document.getElementById('totalTime').textContent = `${totalHours}h ${totalMinutes}m`;
+            
+            if (topPlayer) {
+                const topHours = Math.floor(topPlayer.totalTime / 60);
+                const topMinutes = Math.round(topPlayer.totalTime % 60);
+                document.getElementById('topPlayer').textContent = topPlayer.name;
+                document.getElementById('topPlayerTime').textContent = `${topHours}h ${topMinutes}m jogados`;
+            } else {
+                document.getElementById('topPlayer').textContent = 'Nenhum';
+                document.getElementById('topPlayerTime').textContent = '0h 0m jogados';
+            }
+            
+            // Atualizar ranking de jogadores
+            const rankingContainer = document.getElementById('playersRanking');
+            rankingContainer.innerHTML = '';
+            
+            if (playersArray.length === 0) {
+                rankingContainer.innerHTML = `
+                    <div class="player-item">
+                        <div class="player-info">
+                            <div class="player-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="player-details">
+                                <div class="player-name">Nenhum jogador encontrado</div>
+                                <div class="player-id">Tente alterar os filtros</div>
+                            </div>
+                        </div>
+                        <div class="player-stats">
+                            <div class="player-time">0m</div>
+                            <span class="player-status status-offline">Offline</span>
+                        </div>
+                    </div>
+                `;
+            } else {
+                playersArray.forEach(player => {
+                    const hours = Math.floor(player.totalTime / 60);
+                    const minutes = Math.round(player.totalTime % 60);
+                    
+                    const playerItem = document.createElement('div');
+                    playerItem.className = 'player-item';
+                    playerItem.innerHTML = `
+                        <div class="player-info">
+                            <div class="player-avatar">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="player-details">
+                                <div class="player-name">${player.name}</div>
+                                <div class="player-id">ID: ${player.id}</div>
+                            </div>
+                        </div>
+                        <div class="player-stats">
+                            <div class="player-time">${hours}h ${minutes}m</div>
+                            <span class="player-status ${getStatusClass(player.lastStatus)}">${player.lastStatus}</span>
+                        </div>
+                    `;
+                    
+                    // Destacar o jogador com mais tempo
+                    if (topPlayer && player.id === topPlayer.id) {
+                        playerItem.style.boxShadow = '0 0 0 2px #f39c12';
+                        playerItem.style.transition = 'box-shadow 0.3s ease';
+                    }
+                    
+                    rankingContainer.appendChild(playerItem);
+                });
+            }
+            
+            // Atualizar linha do tempo
+            updateTimeline(timelineData);
+        }
+
+        // Função para atualizar a linha do tempo
+        function updateTimeline(data) {
+            const timelineContainer = document.getElementById('timelineContent');
+            timelineContainer.innerHTML = '';
+            
+            if (data.length === 0) {
+                timelineContainer.innerHTML = `
+                    <div class="timeline-item">
+                        <div class="timeline-time">--:--</div>
+                        <div class="timeline-dot"></div>
+                        <div class="timeline-content">
+                            <div class="status-change">
+                                <span class="player-name">Nenhuma atividade</span>
+                                <span class="status-badge status-offline">Offline</span>
+                            </div>
+                            <div>Nenhuma atividade encontrada para os filtros selecionados</div>
+                        </div>
+                    </div>
+                `;
+                return;
+            }
+            
+            data.forEach((event, index) => {
+                const eventTime = new Date(event.timestamp);
+                const hours = eventTime.getHours().toString().padStart(2, '0');
+                const minutes = eventTime.getMinutes().toString().padStart(2, '0');
+                const timeString = `${hours}:${minutes}`;
+                
+                const playerId = event.player.split(' ')[1];
+                const player = players.find(p => p.id == playerId);
+                const displayName = player ? player.displayName : `Player ${playerId}`;
+                
+                const timelineItem = document.createElement('div');
+                timelineItem.className = 'timeline-item';
+                
+                timelineItem.innerHTML = `
+                    <div class="timeline-time">${timeString}</div>
+                    <div class="timeline-dot"></div>
+                    <div class="timeline-content">
+                        <div class="status-change">
+                            <span class="player-name">${displayName}</span>
+                            <span class="status-badge ${getStatusClass(event.status)}">${event.status}</span>
+                        </div>
+                        <div>${event.status === 'Jogando' ? event.jogo : 'Website'}</div>
+                        ${index < data.length - 1 ? '<div class="timeline-connector"></div>' : ''}
+                    </div>
+                `;
+                
+                timelineContainer.appendChild(timelineItem);
+            });
+        }
+
+        // Função auxiliar para obter a classe CSS do status
+        function getStatusClass(status) {
+            switch (status) {
+                case 'Online': return 'status-online';
+                case 'Jogando': return 'status-playing';
+                default: return 'status-offline';
+            }
+        }
+
+        // Função para formatar data
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            const options = { day: 'numeric', month: 'long', year: 'numeric' };
+            return date.toLocaleDateString('pt-BR', options);
+        }
     </script>
 </body>
 </html>
