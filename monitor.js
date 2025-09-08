@@ -97,8 +97,6 @@ try {
   process.exit(1);
 }
 
-// ...existing code...
-
 async function getUserPresence(userIds) {
   if (!userIds || userIds.length === 0) {
     throw new Error('userIds não pode ser vazio.');
@@ -283,6 +281,15 @@ async function processPlayerData(existingData, presenceData, statusMap) {
 
 // Funções auxiliares removidas - usando abordagem simplificada
 
+// Função para ajustar datas pelo offset de timezone
+function applyTimezoneOffset(dateInput) {
+  if (!dateInput) return new Date();
+  const d = typeof dateInput === 'string' ? new Date(dateInput) : dateInput;
+  if (isNaN(d.getTime())) return new Date();
+  d.setMinutes(d.getMinutes() + TZ_OFFSET_MINUTES);
+  return d;
+}
+
 function formatDate(date) {
   const pad = (n) => n.toString().padStart(2, '0');
   const year = date.getFullYear().toString().slice(-2); // YY format
@@ -291,12 +298,12 @@ function formatDate(date) {
 
 function formatDateTime(dateString) {
   if (!dateString || dateString === 'undefined') {
-    return new Date().toLocaleString('pt-BR');
+    return applyTimezoneOffset(new Date()).toLocaleString('pt-BR');
   }
   try {
-    return new Date(dateString).toLocaleString('pt-BR');
+    return applyTimezoneOffset(dateString).toLocaleString('pt-BR');
   } catch (e) {
-    return new Date().toLocaleString('pt-BR');
+    return applyTimezoneOffset(new Date()).toLocaleString('pt-BR');
   }
 }
 
@@ -388,7 +395,9 @@ async function sendEmailNotification(changes) {
       corpo += '\n' + '-'.repeat(40) + '\n\n';
     }
 
-    corpo += `🕐 Relatório gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+    corpo += `🕐 Relatório gerado em: ${applyTimezoneOffset(
+      new Date()
+    ).toLocaleString('pt-BR')}\n`;
     corpo += '🤖 Monitor Roblox - Sistema Automático';
 
     // Configurar transporter
@@ -545,7 +554,9 @@ async function enviarNotificacao(mudancas) {
       corpo += '\n' + '-'.repeat(40) + '\n\n';
     }
 
-    corpo += `🕐 Relatório gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+    corpo += `🕐 Relatório gerado em: ${applyTimezoneOffset(
+      new Date()
+    ).toLocaleString('pt-BR')}\n`;
     corpo += '🤖 Monitor Roblox - Sistema Automático';
 
     // Configurar transporter

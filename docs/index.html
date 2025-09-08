@@ -8,307 +8,13 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-    <style>
-      :root {
-        --primary: #2c3e50;
-        --secondary: #3498db;
-        --accent: #e74c3c;
-        --light: #ecf0f1;
-        --dark: #2c3e50;
-        --success: #2ecc71;
-        --warning: #f39c12;
-        --gray: #95a5a6;
-      }
-
-      * {
-        box-sizing: border-box;
-        margin: 0;
-        padding: 0;
-      }
-
-      body {
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-        background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-        color: var(--dark);
-        line-height: 1.6;
-        padding: 20px;
-        min-height: 100vh;
-      }
-
-      .container {
-        max-width: 1200px;
-        margin: 0 auto;
-      }
-
-      header {
-        text-align: center;
-        margin-bottom: 30px;
-        padding: 20px;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-      }
-
-      h1 {
-        color: var(--primary);
-        margin-bottom: 10px;
-        font-size: 2.5rem;
-      }
-
-      .date-display {
-        color: var(--gray);
-        font-size: 1.2rem;
-      }
-
-      .summary-cards {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-        gap: 20px;
-        margin-bottom: 30px;
-      }
-
-      .card {
-        background: white;
-        border-radius: 12px;
-        padding: 25px;
-        box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-        transition: transform 0.3s ease;
-      }
-
-      .card:hover {
-        transform: translateY(-5px);
-      }
-
-      .card-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
-      }
-
-      .card-title {
-        font-size: 1.3rem;
-        color: var(--primary);
-      }
-
-      .card-icon {
-        width: 50px;
-        height: 50px;
-        background: var(--light);
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.5rem;
-        color: var(--secondary);
-      }
-
-      .player-card {
-        background: var(--secondary);
-        color: white;
-      }
-
-      .player-card .card-icon {
-        background: rgba(255, 255, 255, 0.2);
-        color: white;
-      }
-
-      .highlight {
-        font-size: 2.5rem;
-        font-weight: bold;
-        margin: 10px 0;
-      }
-
-      .player-list {
-        display: flex;
-        flex-direction: column;
-        gap: 15px;
-      }
-
-      .player-item {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        padding: 15px;
-        background: white;
-        border-radius: 8px;
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-      }
-
-      .player-info {
-        display: flex;
-        align-items: center;
-        gap: 15px;
-      }
-
-      .player-avatar {
-        width: 50px;
-        height: 50px;
-        border-radius: 50%;
-        background: var(--light);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 1.2rem;
-        color: var(--secondary);
-      }
-
-      .player-details {
-        display: flex;
-        flex-direction: column;
-      }
-
-      .player-name {
-        font-weight: bold;
-        font-size: 1.1rem;
-      }
-
-      .player-id {
-        color: var(--gray);
-        font-size: 0.9rem;
-      }
-
-      .player-stats {
-        text-align: right;
-      }
-
-      .player-time {
-        font-weight: bold;
-        font-size: 1.2rem;
-        color: var(--primary);
-      }
-
-      .player-status {
-        font-size: 0.9rem;
-        padding: 3px 10px;
-        border-radius: 20px;
-        display: inline-block;
-      }
-
-      .status-online {
-        background: rgba(46, 204, 113, 0.2);
-        color: #27ae60;
-      }
-
-      .status-offline {
-        background: rgba(149, 165, 166, 0.2);
-        color: #7f8c8d;
-      }
-
-      .status-playing {
-        background: rgba(241, 196, 15, 0.2);
-        color: #f39c12;
-      }
-
-      .timeline {
-        margin-top: 40px;
-      }
-
-      .timeline-title {
-        font-size: 1.5rem;
-        margin-bottom: 20px;
-        color: var(--primary);
-      }
-
-      .timeline-item {
-        display: flex;
-        margin-bottom: 20px;
-        position: relative;
-      }
-
-      .timeline-content {
-        background: white;
-        border-radius: 8px;
-        padding: 15px;
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
-        flex: 1;
-        margin-left: 20px;
-      }
-
-      .timeline-time {
-        min-width: 100px;
-        text-align: right;
-        color: var(--gray);
-        font-size: 0.9rem;
-        padding-top: 3px;
-      }
-
-      .timeline-dot {
-        width: 16px;
-        height: 16px;
-        background: var(--secondary);
-        border-radius: 50%;
-        position: absolute;
-        left: 92px;
-        top: 8px;
-      }
-
-      .timeline-connector {
-        position: absolute;
-        left: 99px;
-        top: 24px;
-        bottom: -20px;
-        width: 2px;
-        background: var(--gray);
-        opacity: 0.3;
-      }
-
-      .status-change {
-        display: flex;
-        justify-content: space-between;
-        margin-bottom: 5px;
-      }
-
-      .status-badge {
-        padding: 3px 10px;
-        border-radius: 20px;
-        font-size: 0.8rem;
-        font-weight: 500;
-      }
-
-      .game-name {
-        font-style: italic;
-        color: var(--gray);
-        margin-top: 5px;
-      }
-
-      @media (max-width: 768px) {
-        .summary-cards {
-          grid-template-columns: 1fr;
-        }
-
-        .player-item {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 10px;
-        }
-
-        .player-stats {
-          text-align: left;
-          width: 100%;
-          display: flex;
-          justify-content: space-between;
-        }
-
-        .timeline-time {
-          min-width: 80px;
-        }
-
-        .timeline-dot {
-          left: 72px;
-        }
-
-        .timeline-connector {
-          left: 79px;
-        }
-      }
-    </style>
+  <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="container">
-      <div class="header">
-        <h1>📊 Relatórios de Jogadores Roblox</h1>
-        <div class="muted">Tempo jogado por jogador e por jogo</div>
+      <div class="header site-font">
+        <h1>🎮 Monitor Roblox</h1>
+        <div class="muted">Tempo jogado por jogador, por jogo e status</div>
       </div>
       <div class="controls">
         <label
@@ -328,7 +34,7 @@
         </button>
         <button class="btn secondary" onclick="printReport()">Imprimir</button>
       </div>
-      <div id="reportArea" class="card"></div>
+  <div id="reportArea" class="card site-font"></div>
     </div>
 
     <script>
@@ -402,12 +108,12 @@
       function aggregateMinutes(data) {
         const minutes = {};
         for (const entry of data) {
-          if (entry.status !== 'Jogando') continue;
           const player = entry.player;
           const jogo = entry.jogo;
-          const key = `${player}|${jogo}`;
+          const status = entry.status;
+          const key = `${player}|${jogo}|${status}`;
           if (!minutes[key]) {
-            minutes[key] = { player, jogo, minutos: 0 };
+            minutes[key] = { player, jogo, status, minutos: 0 };
           }
           minutes[key].minutos += 5; // 5 minutos por execução
         }
@@ -452,12 +158,18 @@
         notifyOnlinePlayers(dailyData);
 
         let html =
-          '<h3>Tempo por jogador e por jogo</h3><div class="table-wrap"><table><thead><tr><th>Jogador</th><th>Jogo</th><th>Minutos</th><th>Horas</th></tr></thead><tbody>';
+          '<h3>Tempo por jogador, jogo e status</h3><div class="table-wrap"><table><thead><tr><th>Jogador</th><th>Jogo</th><th>Status</th><th>Minutos</th><th>Horas</th></tr></thead><tbody>';
         let found = false;
         for (const item of aggregated) {
           if (playerFilter && item.player !== playerFilter) continue;
           const playerName = playersMap.get(item.player) || item.player;
-          html += `<tr><td>${playerName}</td><td>${item.jogo}</td><td>${
+          let badge = '';
+          if (item.status === 'Online') badge = '<span class="badge online">Online</span>';
+          else if (item.status === 'Jogando') badge = '<span class="badge ingame">Jogando</span>';
+          else if (item.status === 'No Studio') badge = '<span class="badge instudio">Studio</span>';
+          else if (item.status === 'Offline') badge = '<span class="badge offline">Offline</span>';
+          else badge = `<span class="badge">${item.status}</span>`;
+          html += `<tr><td>${playerName}</td><td>${item.jogo}</td><td>${badge}</td><td>${
             item.minutos
           }</td><td>${(item.minutos / 60).toFixed(2)}</td></tr>`;
           found = true;

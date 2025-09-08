@@ -6,15 +6,15 @@ on:
     - cron: '*/5 * * * *'
   workflow_dispatch:
   push:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   monitor:
     concurrency:
       group: monitor-job
-      cancel-in-progress: true  # Cancela execução anterior se uma nova iniciar
+      cancel-in-progress: true # Cancela execução anterior se uma nova iniciar
     runs-on: ubuntu-latest
-    timeout-minutes: 10  # Timeout de 10 minutos para evitar execuções longas
+    timeout-minutes: 10 # Timeout de 10 minutos para evitar execuções longas
     steps:
       - uses: actions/checkout@v3
 

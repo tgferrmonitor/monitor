@@ -28,3 +28,4 @@ debug-*.js
 # Local data files (não mais usados)
 daily.json
 status_anterior.json
+setup-secrets.sh
