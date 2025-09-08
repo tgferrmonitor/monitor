@@ -197,7 +197,8 @@ async function saveDailyData(filename, presenceData) {
 
 async function processPlayerData(existingData, presenceData, statusMap) {
   const currentTime = new Date().toISOString();
-  const updatedData = [];
+  // Começa com todos os eventos anteriores
+  const updatedData = [...existingData];
 
   console.log(
     `🔄 Processando dados para ${
@@ -205,64 +206,35 @@ async function processPlayerData(existingData, presenceData, statusMap) {
     } players...`
   );
 
-  // Processar cada player da presença atual
   for (const info of presenceData.userPresences || []) {
     const playerName = getPlayerName(info.userId);
     const status = statusMap[info.userPresenceType] || 'Desconhecido';
     const jogo = info.lastLocation || 'N/A';
 
-    // Encontrar entrada existente para este player
-    const existingEntry = existingData.find(
-      (entry) => entry.player === playerName
-    );
+    // Busca última entrada desse player
+    const lastEntry = [...updatedData]
+      .reverse()
+      .find((entry) => entry.player === playerName);
 
-    if (existingEntry) {
-      // PASSO 1: Aplicar lógica baseada nas regras definidas
-
-      if (existingEntry.status === status && existingEntry.jogo === jogo) {
-        // Mesmo status e mesmo jogo: calcular minutos baseado na diferença de tempo
-        const lastUpdate = new Date(existingEntry.updatedAt);
-        const now = new Date(currentTime);
-        const minutesDiff = Math.floor((now - lastUpdate) / (1000 * 60));
-
-        // Validar se a diferença de tempo é razoável (máximo 60 minutos para evitar dados corrompidos)
-        const validMinutesDiff = Math.min(minutesDiff, 60);
-        const newCountMinutes = Math.max(
-          0,
-          (existingEntry.countMinutes || 0) + validMinutesDiff
-        );
-
-        console.log(
-          `⏱️ ${playerName}: ${status} em ${jogo} - +${validMinutesDiff} min (total: ${newCountMinutes})`
-        );
-
-        updatedData.push({
-          player: playerName,
-          status: status,
-          jogo: jogo,
-          countMinutes: newCountMinutes,
-          updatedAt: currentTime,
-        });
-      } else {
-        // Status diferente OU jogo diferente: começar novo nó com 0 minutos
-        console.log(
-          `🔄 ${playerName}: Mudança detectada - ${existingEntry.status}/${existingEntry.jogo} → ${status}/${jogo} (resetando contador)`
-        );
-
-        updatedData.push({
-          player: playerName,
-          status: status,
-          jogo: jogo,
-          countMinutes: 0,
-          updatedAt: currentTime,
-        });
-      }
-    } else {
-      // Player novo: criar entrada com 0 minutos
-      console.log(
-        `🆕 ${playerName}: Novo player detectado - ${status} em ${jogo}`
+    if (lastEntry && lastEntry.status === status && lastEntry.jogo === jogo) {
+      // Mesmo status/jogo: acumula minutos
+      const lastUpdate = new Date(lastEntry.updatedAt);
+      const now = new Date(currentTime);
+      const minutesDiff = Math.floor((now - lastUpdate) / (1000 * 60));
+      const validMinutesDiff = Math.min(minutesDiff, 60);
+      const newCountMinutes = Math.max(
+        0,
+        (lastEntry.countMinutes || 0) + validMinutesDiff
       );
-
+      updatedData.push({
+        player: playerName,
+        status: status,
+        jogo: jogo,
+        countMinutes: newCountMinutes,
+        updatedAt: currentTime,
+      });
+    } else {
+      // Mudança de status/jogo ou novo player: nova entrada zerada
       updatedData.push({
         player: playerName,
         status: status,
