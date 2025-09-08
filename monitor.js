@@ -27,14 +27,14 @@ if (process.env.ALLOW_SELF_SIGNED === '1') {
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
 // Configurar cliente S3 com NodeHttpHandler usando httpsAgent
-  const s3 = new S3Client({
-    region: process.env.S3_REGION?.trim(),
-    endpoint: process.env.S3_ENDPOINT?.trim(),
-    credentials: {
-      accessKeyId: process.env.S3_KEY?.trim(),
-      secretAccessKey: process.env.S3_SECRET?.trim(),
-    },
-  });
+const s3Client = new S3Client({
+  region: process.env.S3_REGION?.trim(),
+  endpoint: process.env.S3_ENDPOINT?.trim(),
+  credentials: {
+    accessKeyId: process.env.S3_KEY?.trim(),
+    secretAccessKey: process.env.S3_SECRET?.trim(),
+  },
+});
 
 // Carregar configs
 const PLAYERS = JSON.parse(process.env.PLAYERS || '[]');
@@ -128,7 +128,10 @@ async function saveDailyData(filename, presenceData) {
   let existingData = [];
   try {
     const existing = await s3Client.send(
-      new GetObjectCommand({ Bucket: process.env.S3_BUCKET?.trim(), Key: filename })
+      new GetObjectCommand({
+        Bucket: process.env.S3_BUCKET?.trim(),
+        Key: filename,
+      })
     );
     const stream = existing.Body;
     const chunks = [];
