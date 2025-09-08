@@ -2,4 +2,20 @@ node_modules
 .env
 package-lock.json
 scripts/*
-.env
+
+# SSH Keys - NUNCA committar chaves privadas!
+tgferrmonitor
+tgferrmonitor.pub
+*.pem
+*.key
+id_rsa
+id_rsa.pub
+*.ppk
+
+# Logs
+*.log
+npm-debug.log*
+
+# Temporary files
+.tmp/
+temp/
