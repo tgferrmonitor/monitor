@@ -2,15 +2,19 @@ name: Monitor Roblox
 
 on:
   schedule:
+    # Executa a cada 5 minutos
     - cron: '*/5 * * * *'
   workflow_dispatch:
+  push:
+    branches: [ main ]
 
 jobs:
   monitor:
     concurrency:
       group: monitor-job
-      cancel-in-progress: false
+      cancel-in-progress: true  # Cancela execução anterior se uma nova iniciar
     runs-on: ubuntu-latest
+    timeout-minutes: 10  # Timeout de 10 minutos para evitar execuções longas
     steps:
       - uses: actions/checkout@v3
 
@@ -30,3 +34,6 @@ jobs:
           PLAYERS: ${{ secrets.PLAYERS }}
           TZ_OFFSET_MINUTES: ${{ secrets.TZ_OFFSET_MINUTES }}
           ROBLOSECURITY: ${{ secrets.ROBLOSECURITY }}
+          EMAIL_USER: ${{ secrets.EMAIL_USER }}
+          EMAIL_PASS: ${{ secrets.EMAIL_PASS }}
+          EMAIL_TO: ${{ secrets.EMAIL_TO }}
