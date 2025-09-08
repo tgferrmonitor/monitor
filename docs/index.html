@@ -8,7 +8,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
     />
-  <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="container">
@@ -34,7 +34,7 @@
         </button>
         <button class="btn secondary" onclick="printReport()">Imprimir</button>
       </div>
-  <div id="reportArea" class="card site-font"></div>
+      <div id="reportArea" class="card site-font"></div>
     </div>
 
     <script>
@@ -104,7 +104,7 @@
         return [];
       }
 
-      // Agrega minutos por jogador/jogo
+      // Agrega minutos por jogador/jogo/status usando countMinutes real do JSON
       function aggregateMinutes(data) {
         const minutes = {};
         for (const entry of data) {
@@ -115,7 +115,8 @@
           if (!minutes[key]) {
             minutes[key] = { player, jogo, status, minutos: 0 };
           }
-          minutes[key].minutos += 5; // 5 minutos por execução
+          // Usa o valor real do campo countMinutes
+          minutes[key].minutos += entry.countMinutes || 0;
         }
         return Object.values(minutes);
       }
@@ -164,14 +165,20 @@
           if (playerFilter && item.player !== playerFilter) continue;
           const playerName = playersMap.get(item.player) || item.player;
           let badge = '';
-          if (item.status === 'Online') badge = '<span class="badge online">Online</span>';
-          else if (item.status === 'Jogando') badge = '<span class="badge ingame">Jogando</span>';
-          else if (item.status === 'No Studio') badge = '<span class="badge instudio">Studio</span>';
-          else if (item.status === 'Offline') badge = '<span class="badge offline">Offline</span>';
+          if (item.status === 'Online')
+            badge = '<span class="badge online">Online</span>';
+          else if (item.status === 'Jogando')
+            badge = '<span class="badge ingame">Jogando</span>';
+          else if (item.status === 'No Studio')
+            badge = '<span class="badge instudio">Studio</span>';
+          else if (item.status === 'Offline')
+            badge = '<span class="badge offline">Offline</span>';
           else badge = `<span class="badge">${item.status}</span>`;
-          html += `<tr><td>${playerName}</td><td>${item.jogo}</td><td>${badge}</td><td>${
-            item.minutos
-          }</td><td>${(item.minutos / 60).toFixed(2)}</td></tr>`;
+          html += `<tr><td>${playerName}</td><td>${
+            item.jogo
+          }</td><td>${badge}</td><td>${item.minutos}</td><td>${(
+            item.minutos / 60
+          ).toFixed(2)}</td></tr>`;
           found = true;
         }
         html += '</tbody></table></div>';
