@@ -1,200 +1,652 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8" />
-  <title>Relatórios Roblox</title>
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <style>
-    body { font-family: 'Inter', Arial, sans-serif; background: #f8fafc; }
-    .container { max-width: 700px; margin: 40px auto; padding: 20px; background: #fff; border-radius: 8px; box-shadow: 0 2px 8px #0001;}
-    .header { margin-bottom: 24px; }
-    .controls { display: flex; flex-wrap: wrap; gap: 16px; margin-bottom: 24px; align-items: center;}
-    .btn { padding: 6px 18px; border-radius: 4px; border: none; background: #1e293b; color: #fff; font-weight: 600; cursor: pointer;}
-    .btn.secondary { background: #e2e8f0; color: #334155;}
-    .table-wrap { overflow-x: auto; }
-    table { border-collapse: collapse; width: 100%; margin-top: 12px; }
-    th, td { padding: 8px 12px; border: 1px solid #e2e8f0; }
-    th { background: #f1f5f9; }
-    details { margin-top: 16px; }
-    .muted { color: #64748b; margin-bottom: 4px;}
-    @media (max-width: 600px) {.container{padding:8px}.controls{gap:8px}}
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Jogadores</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        :root {
+            --primary: #2c3e50;
+            --secondary: #3498db;
+            --accent: #e74c3c;
+            --light: #ecf0f1;
+            --dark: #2c3e50;
+            --success: #2ecc71;
+            --warning: #f39c12;
+            --gray: #95a5a6;
+        }
+        
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            padding: 20px;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        header {
+            text-align: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        h1 {
+            color: var(--primary);
+            margin-bottom: 10px;
+            font-size: 2.5rem;
+        }
+        
+        .date-display {
+            color: var(--gray);
+            font-size: 1.2rem;
+        }
+        
+        .summary-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+        
+        .card-title {
+            font-size: 1.3rem;
+            color: var(--primary);
+        }
+        
+        .card-icon {
+            width: 50px;
+            height: 50px;
+            background: var(--light);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+            color: var(--secondary);
+        }
+        
+        .player-card {
+            background: var(--secondary);
+            color: white;
+        }
+        
+        .player-card .card-icon {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+        }
+        
+        .highlight {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        
+        .player-list {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+        
+        .player-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .player-info {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+        
+        .player-avatar {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: var(--light);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+            color: var(--secondary);
+        }
+        
+        .player-details {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .player-name {
+            font-weight: bold;
+            font-size: 1.1rem;
+        }
+        
+        .player-id {
+            color: var(--gray);
+            font-size: 0.9rem;
+        }
+        
+        .player-stats {
+            text-align: right;
+        }
+        
+        .player-time {
+            font-weight: bold;
+            font-size: 1.2rem;
+            color: var(--primary);
+        }
+        
+        .player-status {
+            font-size: 0.9rem;
+            padding: 3px 10px;
+            border-radius: 20px;
+            display: inline-block;
+        }
+        
+        .status-online {
+            background: rgba(46, 204, 113, 0.2);
+            color: #27ae60;
+        }
+        
+        .status-offline {
+            background: rgba(149, 165, 166, 0.2);
+            color: #7f8c8d;
+        }
+        
+        .status-playing {
+            background: rgba(241, 196, 15, 0.2);
+            color: #f39c12;
+        }
+        
+        .timeline {
+            margin-top: 40px;
+        }
+        
+        .timeline-title {
+            font-size: 1.5rem;
+            margin-bottom: 20px;
+            color: var(--primary);
+        }
+        
+        .timeline-item {
+            display: flex;
+            margin-bottom: 20px;
+            position: relative;
+        }
+        
+        .timeline-content {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+            flex: 1;
+            margin-left: 20px;
+        }
+        
+        .timeline-time {
+            min-width: 100px;
+            text-align: right;
+            color: var(--gray);
+            font-size: 0.9rem;
+            padding-top: 3px;
+        }
+        
+        .timeline-dot {
+            width: 16px;
+            height: 16px;
+            background: var(--secondary);
+            border-radius: 50%;
+            position: absolute;
+            left: 92px;
+            top: 8px;
+        }
+        
+        .timeline-connector {
+            position: absolute;
+            left: 99px;
+            top: 24px;
+            bottom: -20px;
+            width: 2px;
+            background: var(--gray);
+            opacity: 0.3;
+        }
+        
+        .status-change {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 5px;
+        }
+        
+        .status-badge {
+            padding: 3px 10px;
+            border-radius: 20px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+        
+        .game-name {
+            font-style: italic;
+            color: var(--gray);
+            margin-top: 5px;
+        }
+        
+        @media (max-width: 768px) {
+            .summary-cards {
+                grid-template-columns: 1fr;
+            }
+            
+            .player-item {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 10px;
+            }
+            
+            .player-stats {
+                text-align: left;
+                width: 100%;
+                display: flex;
+                justify-content: space-between;
+            }
+            
+            .timeline-time {
+                min-width: 80px;
+            }
+            
+            .timeline-dot {
+                left: 72px;
+            }
+            
+            .timeline-connector {
+                left: 79px;
+            }
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <div class="header">
-      <h1>📊 Relatórios de Jogadores Roblox</h1>
-      <div class="muted">Tempo jogado por jogador e por jogo</div>
+    <div class="container">
+        <header>
+            <h1>Relatório de Jogadores</h1>
+            <div class="date-display">7 de Setembro de 2025</div>
+        </header>
+        
+        <div class="summary-cards">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Jogadores Ativos</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-users"></i>
+                    </div>
+                </div>
+                <div class="highlight">2</div>
+                <p>jogadores tiveram atividade hoje</p>
+            </div>
+            
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">Tempo Total</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-clock"></i>
+                    </div>
+                </div>
+                <div class="highlight">4h 20m</div>
+                <p>de jogo combinados</p>
+            </div>
+            
+            <div class="card player-card">
+                <div class="card-header">
+                    <h2 class="card-title">Destaque do Dia</h2>
+                    <div class="card-icon">
+                        <i class="fas fa-trophy"></i>
+                    </div>
+                </div>
+                <div class="highlight">Player 2616521101</div>
+                <p>2h 56m jogados</p>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2 class="card-title">Ranking de Jogadores</h2>
+            <div class="player-list">
+                <div class="player-item">
+                    <div class="player-info">
+                        <div class="player-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="player-details">
+                            <div class="player-name">Player 2616521101</div>
+                            <div class="player-id">ID: 2616521101</div>
+                        </div>
+                    </div>
+                    <div class="player-stats">
+                        <div class="player-time">2h 56m</div>
+                        <span class="player-status status-playing">Jogando</span>
+                    </div>
+                </div>
+                
+                <div class="player-item">
+                    <div class="player-info">
+                        <div class="player-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="player-details">
+                            <div class="player-name">Player 7738147772</div>
+                            <div class="player-id">ID: 7738147772</div>
+                        </div>
+                    </div>
+                    <div class="player-stats">
+                        <div class="player-time">1h 23m</div>
+                        <span class="player-status status-offline">Offline</span>
+                    </div>
+                </div>
+                
+                <div class="player-item">
+                    <div class="player-info">
+                        <div class="player-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="player-details">
+                            <div class="player-name">Player 8631412913</div>
+                            <div class="player-id">ID: 8631412913</div>
+                        </div>
+                    </div>
+                    <div class="player-stats">
+                        <div class="player-time">0m</div>
+                        <span class="player-status status-offline">Offline</span>
+                    </div>
+                </div>
+                
+                <div class="player-item">
+                    <div class="player-info">
+                        <div class="player-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="player-details">
+                            <div class="player-name">Player 9005903775</div>
+                            <div class="player-id">ID: 9005903775</div>
+                        </div>
+                    </div>
+                    <div class="player-stats">
+                        <div class="player-time">0m</div>
+                        <span class="player-status status-offline">Offline</span>
+                    </div>
+                </div>
+                
+                <div class="player-item">
+                    <div class="player-info">
+                        <div class="player-avatar">
+                            <i class="fas fa-user"></i>
+                        </div>
+                        <div class="player-details">
+                            <div class="player-name">Player 8419659295</div>
+                            <div class="player-id">ID: 8419659295</div>
+                        </div>
+                    </div>
+                    <div class="player-stats">
+                        <div class="player-time">0m</div>
+                        <span class="player-status status-offline">Offline</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="timeline">
+            <h2 class="timeline-title">Linha do Tempo de Atividades</h2>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">01:37</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 7738147772</span>
+                        <span class="status-badge status-online">Online</span>
+                    </div>
+                    <div>Conectado via Website</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">02:24</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 7738147772</span>
+                        <span class="status-badge status-offline">Offline</span>
+                    </div>
+                    <div>Desconectado via Website</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">11:10</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 7738147772</span>
+                        <span class="status-badge status-online">Online</span>
+                    </div>
+                    <div>Conectado via Website</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">11:21</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 7738147772</span>
+                        <span class="status-badge status-offline">Offline</span>
+                    </div>
+                    <div>Desconectado via Website</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">13:47</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 2616521101</span>
+                        <span class="status-badge status-online">Online</span>
+                    </div>
+                    <div>Conectado via Website</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">13:54</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 2616521101</span>
+                        <span class="status-badge status-offline">Offline</span>
+                    </div>
+                    <div>Desconectado via Website</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">16:52</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 2616521101</span>
+                        <span class="status-badge status-online">Online</span>
+                    </div>
+                    <div>Conectado via Website</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">16:59</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 2616521101</span>
+                        <span class="status-badge status-playing">Jogando</span>
+                    </div>
+                    <div class="game-name">[🔪Slasher] Abandonado</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">17:51</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 2616521101</span>
+                        <span class="status-badge status-playing">Jogando</span>
+                    </div>
+                    <div class="game-name">Slayer Tycoon (v1.8)</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">18:40</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 2616521101</span>
+                        <span class="status-badge status-playing">Jogando</span>
+                    </div>
+                    <div class="game-name">Evoluir [Sniffer!]</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">18:49</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 2616521101</span>
+                        <span class="status-badge status-online">Online</span>
+                    </div>
+                    <div>Conectado via Website</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">18:53</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 7738147772</span>
+                        <span class="status-badge status-online">Online</span>
+                    </div>
+                    <div>Conectado via Website</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">18:53</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 2616521101</span>
+                        <span class="status-badge status-offline">Offline</span>
+                    </div>
+                    <div>Desconectado via Website</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">19:20</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 7738147772</span>
+                        <span class="status-badge status-offline">Offline</span>
+                    </div>
+                    <div>Desconectado via Website</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">19:38</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 2616521101</span>
+                        <span class="status-badge status-playing">Jogando</span>
+                    </div>
+                    <div class="game-name">[🔪Slasher] Abandonado</div>
+                    <div class="timeline-connector"></div>
+                </div>
+            </div>
+            
+            <div class="timeline-item">
+                <div class="timeline-time">20:31</div>
+                <div class="timeline-dot"></div>
+                <div class="timeline-content">
+                    <div class="status-change">
+                        <span class="player-name">Player 2616521101</span>
+                        <span class="status-badge status-offline">Offline</span>
+                    </div>
+                    <div>Desconectado via Website</div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div class="controls">
-      <label>Data:
-        <input type="date" id="date" />
-      </label>
-      <label>Jogador:
-        <select id="playerFilter">
-          <option value="">(todos)</option>
-        </select>
-      </label>
-      <button class="btn" onclick="loadReport()">Carregar</button>
-      <button class="btn secondary" onclick="setTodayInputs()">Hoje</button>
-      <button class="btn secondary" onclick="exportCSV()">Exportar CSV</button>
-      <button class="btn secondary" onclick="printReport()">Imprimir</button>
-    </div>
-    <div id="reportArea" class="card"></div>
-  </div>
 
-  <script>
-    // Service Worker para notificações
-    let serviceWorkerReady = false;
-    let swRegistration = null;
-    if ('serviceWorker' in navigator && 'Notification' in window) {
-      navigator.serviceWorker.register('./sw.js').then(function(reg) {
-        swRegistration = reg;
-        serviceWorkerReady = true;
-        console.log('Service worker registrado!', reg);
-      });
-      Notification.requestPermission();
-    }
-
-    // URL do bucket S3 (ajuste conforme necessário)
-    const BUCKET_URL = 'https://bucket-tgferr-monitor.br-se1.magaluobjects.com';
-
-    // Converte data ISO para formato DDMMYY
-    function convertToDDMMYY(isoDate) {
-      const [year, month, day] = isoDate.split('-');
-      const yy = year.slice(-2);
-      return `${day}${month}${yy}`;
-    }
-
-    // Carrega lista de jogadores do arquivo local (opcional)
-    let playersMap = new Map();
-    async function loadPlayers() {
-      try {
-        const res = await fetch('./players.json');
-        if (!res.ok) return;
-        const list = await res.json();
-        for (const p of list) playersMap.set(`Player ${p.id}`, p.name || p.displayName || p.id);
-        // preencher select de filtro
-        const sel = document.getElementById('playerFilter');
-        for (const p of list) {
-          const opt = document.createElement('option');
-          opt.value = `Player ${p.id}`;
-          opt.textContent = p.name || p.displayName || p.id;
-          sel.appendChild(opt);
-        }
-      } catch (e) {/* ignore */}
-    }
-
-    // Busca dados do arquivo diário (formato DDMMYY.json, formato array)
-    async function fetchDailyData(isoDate) {
-      const filename = convertToDDMMYY(isoDate);
-      const url = `${BUCKET_URL}/${filename}.json`;
-      try {
-        const res = await fetch(url);
-        if (res.ok) {
-          return await res.json();
-        }
-      } catch (e) { /* ignore */ }
-      return [];
-    }
-
-    // Agrega minutos por jogador/jogo
-    function aggregateMinutes(data) {
-      const minutes = {};
-      for (const entry of data) {
-        if (entry.status !== 'Jogando') continue;
-        const player = entry.player;
-        const jogo = entry.jogo;
-        const key = `${player}|${jogo}`;
-        if (!minutes[key]) {
-          minutes[key] = { player, jogo, minutos: 0 };
-        }
-        minutes[key].minutos += 5; // 5 minutos por execução
-      }
-      return Object.values(minutes);
-    }
-
-    // Notifica se jogador está online ou jogando
-    function notifyOnlinePlayers(data) {
-      if (Notification.permission !== 'granted' || !serviceWorkerReady) return;
-      const notified = new Set();
-      for (const entry of data) {
-        if (['Online', 'Jogando'].includes(entry.status)) {
-          const playerName = playersMap.get(entry.player) || entry.player;
-          const status = entry.status;
-          const jogo = entry.jogo;
-          const key = `${entry.player}|${status}|${jogo}`;
-          // Só notifica uma vez por jogador/jogo/status por relatório carregado
-          if (!notified.has(key)) {
-            notified.add(key);
-            if (navigator.serviceWorker.controller) {
-              navigator.serviceWorker.controller.postMessage({
-                playerName,
-                status,
-                jogo
-              });
-            }
-          }
-        }
-      }
-    }
-
-    async function loadReport() {
-      const dateIso = document.getElementById('date').value;
-      if (!dateIso) return alert('Escolha uma data!');
-      const playerFilter = document.getElementById('playerFilter').value;
-
-      const dailyData = await fetchDailyData(dateIso);
-      const aggregated = aggregateMinutes(dailyData);
-
-      // Chama notificação
-      notifyOnlinePlayers(dailyData);
-
-      let html = '<h3>Tempo por jogador e por jogo</h3><div class="table-wrap"><table><thead><tr><th>Jogador</th><th>Jogo</th><th>Minutos</th><th>Horas</th></tr></thead><tbody>';
-      let found = false;
-      for (const item of aggregated) {
-        if (playerFilter && item.player !== playerFilter) continue;
-        const playerName = playersMap.get(item.player) || item.player;
-        html += `<tr><td>${playerName}</td><td>${item.jogo}</td><td>${item.minutos}</td><td>${(item.minutos/60).toFixed(2)}</td></tr>`;
-        found = true;
-      }
-      html += '</tbody></table></div>';
-      if (!found) html += '<p style="margin-top:16px;">Nenhum dado para esta data/jogador.</p>';
-      document.getElementById('reportArea').innerHTML = html;
-    }
-
-    function setTodayInputs() {
-      const now = new Date();
-      const pad = (n) => n.toString().padStart(2, '0');
-      const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
-      document.getElementById('date').value = iso;
-      loadReport();
-    }
-
-    function exportCSV() {
-      const table = document.querySelector('#reportArea table');
-      if (!table) return alert('Nada para exportar');
-      const rows = [];
-      for (const tr of table.querySelectorAll('tr')) {
-        const cols = Array.from(tr.querySelectorAll('th,td')).map((n) => n.textContent.trim());
-        rows.push(cols.join(','));
-      }
-      const csv = rows.join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `report-${document.getElementById('date').value || 'report'}.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    function printReport() {
-      window.print();
-    }
-
-    setTodayInputs();
-    loadPlayers();
-  </script>
+    <script>
+        // Destaque o jogador com mais tempo
+        document.addEventListener('DOMContentLoaded', function() {
+            const topPlayer = document.querySelector('.player-item:first-child');
+            topPlayer.style.boxShadow = '0 0 0 2px #f39c12';
+            topPlayer.style.transition = 'box-shadow 0.3s ease';
+        });
+    </script>
 </body>
 </html>
