@@ -162,10 +162,16 @@ async function saveDailyData(filename, presenceData) {
   });
 
   try {
+    console.log('📤 Enviando dados para S3...');
     await s3Client.send(command);
     console.log(
       `✅ Dados salvos: ${filename} (${updatedData.length} entradas)`
     );
+
+    // Salvar também uma cópia local para o script de notificação
+    console.log('📂 Iniciando salvamento local...');
+    await saveDailyLocal(updatedData);
+    console.log('🎯 Processo de salvamento completo!');
   } catch (err) {
     console.error('Erro ao enviar para S3:', err);
     throw err;
@@ -256,6 +262,34 @@ async function processPlayerData(existingData, presenceData, statusMap) {
   return updatedData;
 }
 
+async function saveDailyLocal(data) {
+  try {
+    console.log('💾 Iniciando salvamento local...');
+    const fs = await import('fs/promises');
+
+    // Salvar na raiz para o script de notificação
+    await fs.writeFile('./daily.json', JSON.stringify(data, null, 2));
+    console.log('📝 Arquivo daily.json local salvo');
+
+    // Criar diretório .github/scripts se não existir
+    try {
+      await fs.mkdir('./.github/scripts', { recursive: true });
+    } catch (err) {
+      // Diretório já existe
+    }
+
+    // Salvar também em .github/scripts para compatibilidade
+    await fs.writeFile(
+      './.github/scripts/daily.json',
+      JSON.stringify(data, null, 2)
+    );
+    console.log('📝 Arquivo daily.json salvo em .github/scripts/');
+    console.log('💾 Salvamento local concluído');
+  } catch (err) {
+    console.error('⚠️ Erro ao salvar arquivo daily.json local:', err);
+  }
+}
+
 // Funções auxiliares removidas - usando abordagem simplificada
 
 function formatDate(date) {
@@ -275,12 +309,18 @@ async function main() {
     now.setMinutes(now.getMinutes() + TZ_OFFSET_MINUTES);
     const filename = `${formatDate(now)}.json`;
 
+    console.log(`📊 Iniciando processamento para ${filename}...`);
     // Salvar dados diários no formato simplificado
     await saveDailyData(filename, presence);
 
     console.log(`✅ Processamento concluído para ${filename}`);
+    console.log('🏁 Script finalizado com sucesso!');
+
+    // Forçar saída após sucesso
+    process.exit(0);
   } catch (error) {
     console.error('❌ Erro no monitor:', error);
+    process.exit(1);
   }
 }
 

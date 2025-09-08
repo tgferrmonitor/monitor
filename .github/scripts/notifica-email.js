@@ -1,10 +1,66 @@
+import dotenv from 'dotenv';
+dotenv.config();
+// Necessário: node-fetch@2 e nodemailer instalados
 import fs from 'fs';
 import nodemailer from 'nodemailer';
 
-const EMAIL_USER = process.env.EMAIL_USER;
-const EMAIL_PASS = process.env.EMAIL_PASS;
-const EMAIL_TO   = process.env.EMAIL_TO;
+// Carrega variáveis de ambiente
+const EMAIL_USER = process.env.EMAIL_USER || process.env.S3_EMAIL_USER;
+const EMAIL_PASS = process.env.EMAIL_PASS || process.env.S3_EMAIL_PASS;
+const EMAIL_TO = process.env.EMAIL_TO || process.env.S3_EMAIL_TO;
 
+// Debug das credenciais (remover depois)
+console.log('EMAIL_USER:', EMAIL_USER ? 'definido' : 'indefinido');
+console.log('EMAIL_PASS:', EMAIL_PASS ? 'definido' : 'indefinido');
+console.log('EMAIL_TO:', EMAIL_TO ? 'definido' : 'indefinido');
+
+// Carregar mapeamento de players
+let playersMap = new Map();
+try {
+  const playersData = JSON.parse(fs.readFileSync('./players.json', 'utf8'));
+
+  // Formato novo: array de objetos {id, name, displayName}
+  if (playersData.players && Array.isArray(playersData.players)) {
+    for (const player of playersData.players) {
+      if (typeof player === 'object' && player.id) {
+        // Usar displayName se disponível, senão name, senão o próprio ID
+        const playerName =
+          player.displayName || player.name || String(player.id);
+        playersMap.set(String(player.id), playerName);
+      } else if (typeof player === 'string') {
+        // Formato antigo: array de strings (IDs/nomes)
+        playersMap.set(String(player), player);
+      }
+    }
+  }
+
+  console.log(`📝 Mapeamento de players carregado: ${playersMap.size} players`);
+  if (playersMap.size > 0) {
+    console.log('🎯 Players encontrados:', Array.from(playersMap.entries()));
+  }
+} catch (err) {
+  console.log('ℹ️ Arquivo players.json não encontrado, usando IDs como nomes');
+  console.error('Erro ao carregar players:', err.message);
+}
+
+function getPlayerName(userId) {
+  // Remove "Player " do início se existir para pegar apenas o ID
+  const cleanId = userId.replace('Player ', '');
+  return playersMap.get(cleanId) || userId;
+}
+
+function formatDateTime(dateString) {
+  if (!dateString || dateString === 'undefined') {
+    return new Date().toLocaleString('pt-BR');
+  }
+  try {
+    return new Date(dateString).toLocaleString('pt-BR');
+  } catch (e) {
+    return new Date().toLocaleString('pt-BR');
+  }
+}
+
+// Carrega arquivo do dia
 let dataAtual = [];
 try {
   dataAtual = JSON.parse(fs.readFileSync('daily.json', 'utf-8'));
@@ -13,104 +69,114 @@ try {
   process.exit(1);
 }
 
+// Carrega status anterior
 const ARQUIVO_STATUS = '.github/scripts/status_anterior.json';
 let statusAnterior = {};
 if (fs.existsSync(ARQUIVO_STATUS)) {
   try {
     statusAnterior = JSON.parse(fs.readFileSync(ARQUIVO_STATUS, 'utf-8'));
-  } catch (e) { statusAnterior = {}; }
+  } catch (e) {
+    statusAnterior = {};
+  }
 }
 
-// Filtrar apenas jogadores que estão online ou jogando atualmente
-const jogadoresAtivos = dataAtual.filter(entry => 
-  entry.status === 'Online' || entry.status === 'Jogando'
-);
-
-// Verificar mudanças apenas para jogadores ativos
-const mudancasRelevantes = [];
-for (const entry of jogadoresAtivos) {
-  const jogador = entry.player;
+// Detecta mudanças de status
+const mudancas = [];
+for (const entry of dataAtual) {
+  const jogador = getPlayerName(entry.player);
   const statusNovo = entry.status;
   const jogoNovo = entry.jogo;
-  const tsNovo = entry.timestamp;
-  const chave = `${jogador}`;
+  const tsNovo = entry.updatedAt || entry.timestamp || new Date().toISOString(); // Usar updatedAt primeiro
+  const chave = entry.player; // Usar o ID original como chave
 
   const anterior = statusAnterior[chave];
-  
-  // Só notificar se:
-  // 1. É uma mudança de status (não havia registro anterior)
-  // 2. Houve mudança de status offline para online/jogando
-  // 3. Houve mudança de jogo enquanto está jogando
-  const deveNotificar = !anterior || 
-                       (anterior.status !== 'Online' && anterior.status !== 'Jogando' && 
-                        (statusNovo === 'Online' || statusNovo === 'Jogando')) ||
-                       (statusNovo === 'Jogando' && anterior.status === 'Jogando' && jogoNovo !== anterior.jogo);
-
-  if (deveNotificar) {
-    mudancasRelevantes.push({
-      jogador, statusNovo, jogoNovo, tsNovo,
-      statusAnt: anterior ? anterior.status : 'N/A',
+  if (
+    !anterior ||
+    statusNovo !== anterior.status ||
+    jogoNovo !== anterior.jogo
+  ) {
+    // Mudou!
+    mudancas.push({
+      jogador,
+      statusNovo,
+      jogoNovo,
+      tsNovo,
+      statusAnt: anterior ? anterior.status : 'Primeira detecção',
       jogoAnt: anterior ? anterior.jogo : 'N/A',
-      tsAnt: anterior ? anterior.timestamp : 'N/A'
+      tsAnt: anterior ? anterior.timestamp : 'N/A',
     });
+    // Atualiza status salvo
+    statusAnterior[chave] = {
+      status: statusNovo,
+      jogo: jogoNovo,
+      timestamp: tsNovo,
+    };
   }
-
-  // Atualizar status anterior independentemente de notificação
-  statusAnterior[chave] = {
-    status: statusNovo,
-    jogo: jogoNovo,
-    timestamp: tsNovo
-  };
 }
 
-// Se não houver mudanças relevantes, sair sem enviar email
-if (mudancasRelevantes.length === 0) {
-  console.log('Nenhuma mudança relevante de status detectada (apenas online/jogando).');
-  fs.writeFileSync(ARQUIVO_STATUS, JSON.stringify(statusAnterior, null, 2));
+// Se não houve mudanças, encerra
+if (mudancas.length === 0) {
+  console.log('Nenhuma mudança de status detectada.');
   process.exit(0);
 }
 
-// Preparar corpo do email apenas com mudanças relevantes
-let corpo = 'Mudança de status detectada (jogadores online/jogando):\n\n';
-for (const m of mudancasRelevantes) {
-  corpo += `Jogador: ${m.jogador}\nDe: ${m.statusAnt} (${m.jogoAnt}) para: ${m.statusNovo} (${m.jogoNovo})\nQuando: ${m.tsNovo}\n\n`;
+// Monta corpo do e-mail
+let corpo = '🎮 RELATÓRIO DE ATIVIDADE ROBLOX 🎮\n';
+corpo += '='.repeat(50) + '\n\n';
+
+if (mudancas.length === 1) {
+  corpo += '📊 1 mudança de status detectada:\n\n';
+} else {
+  corpo += `📊 ${mudancas.length} mudanças de status detectadas:\n\n`;
 }
 
-// Adicionar resumo de jogadores ativos atualmente
-corpo += '\n--- RESUMO DOS JOGADORES ATIVOS ---\n';
-const jogadoresUnicos = [...new Set(jogadoresAtivos.map(j => j.player))];
-for (const jogador of jogadoresUnicos) {
-  const atividades = jogadoresAtivos.filter(j => j.player === jogador);
-  const ultimaAtividade = atividades[atividades.length - 1]; // Último status
-  
-  corpo += `\n${jogador}: ${ultimaAtividade.status}`;
-  if (ultimaAtividade.status === 'Jogando') {
-    corpo += ` (${ultimaAtividade.jogo})`;
+for (const m of mudancas) {
+  corpo += `👤 JOGADOR: ${m.jogador}\n`;
+  corpo += `📅 QUANDO: ${formatDateTime(m.tsNovo)}\n`;
+  corpo += `🔄 MUDANÇA: ${m.statusAnt} → ${m.statusNovo}\n`;
+
+  if (m.jogoNovo !== 'N/A' && m.jogoNovo !== 'Website') {
+    corpo += `🎯 JOGO: ${m.jogoNovo}\n`;
   }
-  corpo += ` - desde ${ultimaAtividade.timestamp}`;
+
+  if (m.statusNovo === 'Jogando' && m.jogoNovo !== 'N/A') {
+    corpo += `⏱️ ATIVIDADE: Jogando ativamente\n`;
+  } else if (m.statusNovo === 'Online') {
+    corpo += `🟢 ATIVIDADE: Online no Roblox\n`;
+  } else if (m.statusNovo === 'Offline') {
+    corpo += `🔴 ATIVIDADE: Desconectado\n`;
+  }
+
+  corpo += '\n' + '-'.repeat(40) + '\n\n';
 }
 
+corpo += `🕐 Relatório gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+corpo += '🤖 Monitor Roblox - Sistema Automático';
+
+// Envia e-mail
 async function enviaEmail() {
   let transporter = nodemailer.createTransport({
     service: 'gmail',
     auth: {
       user: EMAIL_USER,
-      pass: EMAIL_PASS
-    }
+      pass: EMAIL_PASS,
+    },
   });
 
   await transporter.sendMail({
-    from: `"Monitor Roblox" <${EMAIL_USER}>`,
+    from: `"🎮 Monitor Roblox" <${EMAIL_USER}>`,
     to: EMAIL_TO,
-    subject: 'Jogadores Roblox Online/Jogando!',
-    text: corpo
+    subject: `🔔 Atividade Roblox Detectada - ${mudancas.length} mudança(s)`,
+    text: corpo,
   });
-  console.log('E-mail enviado!');
+  console.log('📧 E-mail enviado com sucesso!');
 }
 
-// Salvar status atualizado e enviar email
+// Salva status anterior atualizado para próxima execução
 fs.writeFileSync(ARQUIVO_STATUS, JSON.stringify(statusAnterior, null, 2));
-enviaEmail().catch(err => {
+
+// Envia o e-mail
+enviaEmail().catch((err) => {
   console.error('Erro ao enviar e-mail:', err);
   process.exit(1);
 });
