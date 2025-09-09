@@ -45,7 +45,7 @@ async function loadPlayers() {
 // Busca dados diários
 async function fetchDailyData(isoDate) {
   const filename = convertToDDMMYY(isoDate);
-  const filenameWithExt = `${filename}.json`;
+  const filenameWithExt = `${filename}.jso`;
   // Tentar primeiro arquivo local (útil para GitHub Pages / testes locais)
   try {
     const localUrl = `./${filenameWithExt}?t=${Date.now()}`; // cache-bust
