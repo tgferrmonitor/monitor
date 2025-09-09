@@ -3,271 +3,55 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Relatório de Jogadores</title>
-    <link
-      rel="stylesheet"
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    <title>Monitor Roblox - Relatório de Jogadores</title>
+    <meta
+      name="description"
+      content="Monitor de atividade dos jogadores Roblox com relatórios detalhados"
     />
-    <link rel="stylesheet" href="styles.css" />
+    <link rel="stylesheet" href="styles/main.css" />
   </head>
   <body>
     <div class="container">
-      <div class="header site-font">
-        <h1>🎮 Monitor Roblox</h1>
-        <div class="muted">Tempo jogado por jogador, por jogo e status</div>
-      </div>
-      <div class="controls">
-        <label
-          >Data:
+      <header class="header">
+        <div>
+          <h1>🎮 Monitor Roblox</h1>
+          <div class="muted">Tempo jogado por jogador, por jogo e status</div>
+        </div>
+        <button id="themeToggle" class="theme-toggle">🌙 Tema Escuro</button>
+      </header>
+
+      <section class="controls" style="align-items: end">
+        <label>
+          Data:
           <input type="date" id="date" />
         </label>
-        <label
-          >Jogador:
+        <label>
+          Jogador:
           <select id="playerFilter">
             <option value="">(todos)</option>
           </select>
         </label>
-        <button class="btn" onclick="loadReport()">Carregar</button>
-        <button class="btn secondary" onclick="setTodayInputs()">Hoje</button>
-        <button class="btn secondary" onclick="exportCSV()">
-          Exportar CSV
+        <button class="btn" onclick="loadReport()">📊 Carregar</button>
+        <button class="btn secondary" onclick="setTodayInputs()">
+          📅 Hoje
         </button>
-        <button class="btn secondary" onclick="printReport()">Imprimir</button>
-      </div>
-      <div id="reportArea" class="card site-font"></div>
+        <button class="btn secondary" onclick="exportCSV()">
+          📄 Exportar CSV
+        </button>
+        <button class="btn secondary" onclick="printReport()">
+          🖨️ Imprimir
+        </button>
+      </section>
+
+      <main id="reportArea" class="card">
+        <p>Selecione uma data para visualizar o relatório.</p>
+      </main>
     </div>
 
-    <script>
-      // Service Worker para notificações
-      let serviceWorkerReady = false;
-      let swRegistration = null;
-      if ('serviceWorker' in navigator && 'Notification' in window) {
-        navigator.serviceWorker.register('./sw.js').then(function (reg) {
-          swRegistration = reg;
-          serviceWorkerReady = true;
-          console.log('Service worker registrado!', reg);
-        });
-        Notification.requestPermission();
-      }
-
-      // URL do bucket S3 (ajuste conforme necessário)
-      const BUCKET_URL =
-        'https://bucket-tgferr-monitor.br-se1.magaluobjects.com';
-
-      // Converte data ISO para formato DDMMYY
-      function convertToDDMMYY(isoDate) {
-        const [year, month, day] = isoDate.split('-');
-        const yy = year.slice(-2);
-        return `${day}${month}${yy}`;
-      }
-
-      // Carrega lista de jogadores do arquivo local (opcional)
-      let playersMap = new Map();
-      async function loadPlayers() {
-        try {
-          const res = await fetch('./players.json');
-          if (!res.ok) return;
-          const list = await res.json();
-          for (const p of list)
-            playersMap.set(`Player ${p.id}`, p.name || p.displayName || p.id);
-          // preencher select de filtro
-          const sel = document.getElementById('playerFilter');
-          for (const p of list) {
-            const opt = document.createElement('option');
-            opt.value = `Player ${p.id}`;
-            opt.textContent = p.name || p.displayName || p.id;
-            sel.appendChild(opt);
-          }
-        } catch (e) {
-          /* ignore */
-        }
-      }
-
-      // Busca dados do arquivo diário (formato DDMMYY.json, formato array)
-      async function fetchDailyData(isoDate) {
-        const filename = convertToDDMMYY(isoDate);
-        const url = `${BUCKET_URL}/${filename}.json`;
-        console.log('🔍 Tentando buscar:', url);
-        try {
-          const res = await fetch(url);
-          console.log('📡 Response status:', res.status, res.statusText);
-          if (res.ok) {
-            const data = await res.json();
-            console.log('✅ Dados carregados:', data.length, 'entradas');
-            return data;
-          } else {
-            console.error('❌ Erro HTTP:', res.status, res.statusText);
-          }
-        } catch (e) {
-          console.error('❌ Erro na requisição:', e);
-        }
-        return [];
-      }
-
-      // Agrega minutos por jogador/jogo/status usando countMinutes real do JSON
-      function aggregateMinutes(data) {
-        const minutes = {};
-        for (const entry of data) {
-          const player = entry.player;
-          const jogo = entry.jogo;
-          const status = entry.status;
-          const key = `${player}|${jogo}|${status}`;
-          if (!minutes[key]) {
-            minutes[key] = { player, jogo, status, minutos: 0 };
-          }
-          // Usa o valor real do campo countMinutes
-          minutes[key].minutos += entry.countMinutes || 0;
-        }
-        return Object.values(minutes);
-      }
-
-      // Notifica se jogador está online ou jogando
-      function notifyOnlinePlayers(data) {
-        if (Notification.permission !== 'granted' || !serviceWorkerReady)
-          return;
-        const notified = new Set();
-        for (const entry of data) {
-          if (['Online', 'Jogando'].includes(entry.status)) {
-            const playerName = playersMap.get(entry.player) || entry.player;
-            const status = entry.status;
-            const jogo = entry.jogo;
-            const key = `${entry.player}|${status}|${jogo}`;
-            // Só notifica uma vez por jogador/jogo/status por relatório carregado
-            if (!notified.has(key)) {
-              notified.add(key);
-              if (navigator.serviceWorker.controller) {
-                navigator.serviceWorker.controller.postMessage({
-                  playerName,
-                  status,
-                  jogo,
-                });
-              }
-            }
-          }
-        }
-      }
-
-      // Gera histórico do dia para cada player
-      function buildHistory(data) {
-        const history = {};
-        for (const entry of data) {
-          const player = entry.player;
-          if (!history[player]) history[player] = [];
-          history[player].push({
-            status: entry.status,
-            jogo: entry.jogo,
-            minutos: entry.countMinutes || 0,
-            hora: new Date(entry.updatedAt).toLocaleTimeString('pt-BR', {
-              hour: '2-digit',
-              minute: '2-digit',
-            }),
-          });
-        }
-        return history;
-      }
-
-      async function loadReport() {
-        const dateIso = document.getElementById('date').value;
-        if (!dateIso) return alert('Escolha uma data!');
-        const playerFilter = document.getElementById('playerFilter').value;
-
-        const dailyData = await fetchDailyData(dateIso);
-        const aggregated = aggregateMinutes(dailyData);
-        const history = buildHistory(dailyData);
-
-        // Chama notificação
-        notifyOnlinePlayers(dailyData);
-
-        // Tabela principal
-        let html =
-          '<h3>Tempo por jogador, jogo e status</h3><div class="table-wrap"><table><thead><tr><th>Jogador</th><th>Jogo</th><th>Status</th><th>Minutos</th><th>Horas</th></tr></thead><tbody>';
-        let found = false;
-        for (const item of aggregated) {
-          if (playerFilter && item.player !== playerFilter) continue;
-          const playerName = playersMap.get(item.player) || item.player;
-          let badge = '';
-          if (item.status === 'Online')
-            badge = '<span class="badge online">Online</span>';
-          else if (item.status === 'Jogando')
-            badge = '<span class="badge ingame">Jogando</span>';
-          else if (item.status === 'No Studio')
-            badge = '<span class="badge instudio">Studio</span>';
-          else if (item.status === 'Offline')
-            badge = '<span class="badge offline">Offline</span>';
-          else badge = `<span class="badge">${item.status}</span>`;
-          html += `<tr><td>${playerName}</td><td>${
-            item.jogo
-          }</td><td>${badge}</td><td>${item.minutos}</td><td>${(
-            item.minutos / 60
-          ).toFixed(2)}</td></tr>`;
-          found = true;
-        }
-        html += '</tbody></table></div>';
-        if (!found)
-          html +=
-            '<p style="margin-top:16px;">Nenhum dado para esta data/jogador.</p>';
-        // Histórico do dia
-        html +=
-          '<h3 style="margin-top:32px;">Histórico do dia por jogador</h3>';
-        for (const [player, events] of Object.entries(history)) {
-          const playerName = playersMap.get(player) || player;
-          html += `<div class="card" style="margin-bottom:16px;"><strong>${playerName}</strong><ul style="margin-top:8px;">`;
-          for (const ev of events) {
-            let badge = '';
-            if (ev.status === 'Online')
-              badge = '<span class="badge online">Online</span>';
-            else if (ev.status === 'Jogando')
-              badge = '<span class="badge ingame">Jogando</span>';
-            else if (ev.status === 'No Studio')
-              badge = '<span class="badge instudio">Studio</span>';
-            else if (ev.status === 'Offline')
-              badge = '<span class="badge offline">Offline</span>';
-            else badge = `<span class="badge">${ev.status}</span>`;
-            html += `<li>${ev.hora} - ${badge} - <span class="muted">${ev.jogo}</span> - <span class="muted">${ev.minutos} min</span></li>`;
-          }
-          html += '</ul></div>';
-        }
-        document.getElementById('reportArea').innerHTML = html;
-      }
-
-      function setTodayInputs() {
-        const now = new Date();
-        const pad = (n) => n.toString().padStart(2, '0');
-        const iso = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(
-          now.getDate()
-        )}`;
-        document.getElementById('date').value = iso;
-        loadReport();
-      }
-
-      function exportCSV() {
-        const table = document.querySelector('#reportArea table');
-        if (!table) return alert('Nada para exportar');
-        const rows = [];
-        for (const tr of table.querySelectorAll('tr')) {
-          const cols = Array.from(tr.querySelectorAll('th,td')).map((n) =>
-            n.textContent.trim()
-          );
-          rows.push(cols.join(','));
-        }
-        const csv = rows.join('\n');
-        const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `report-${
-          document.getElementById('date').value || 'report'
-        }.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-      }
-
-      function printReport() {
-        window.print();
-      }
-
-      setTodayInputs();
-      loadPlayers();
-    </script>
+    <!-- Scripts -->
+    <script src="scripts/main.js"></script>
+    <script src="components/theme.js"></script>
+    <script src="components/report.js"></script>
+    <script src="components/todo.js"></script>
   </body>
 </html>

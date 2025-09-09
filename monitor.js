@@ -156,38 +156,62 @@ async function saveDailyData(filename, presenceData) {
     4: 'Invisível',
   };
 
-  // Processar dados usando nova lógica de tempo acumulado
-  const updatedData = await processPlayerData(
-    existingData,
-    presenceData,
-    statusMap
-  );
-
-  // Detectar mudanças para notificação
-  console.log('🔍 Detectando mudanças para notificação...');
-  const changes = detectChanges(existingData, updatedData);
-
-  // Enviar notificação se houver mudanças
-  if (changes.length > 0) {
-    console.log(
-      `📧 ${changes.length} mudança(s) detectada(s), enviando email...`
-    );
-    await sendEmailNotification(changes);
+  // Agrupa dados por jogador/status
+  const allEntries = [...existingData];
+  if (presenceData && presenceData.userPresences) {
+    for (const info of presenceData.userPresences) {
+      const playerName = getPlayerName(info.userId);
+      const status = statusMap[info.userPresenceType] || 'Desconhecido';
+      const jogo = info.lastLocation || '';
+      allEntries.push({
+        player: playerName,
+        status,
+        jogo,
+        countMinutes: info.countMinutes || 0,
+        updatedAt: new Date().toISOString(),
+      });
+    }
   }
+
+  // Monta estrutura agrupada
+  const groupedData = {};
+  for (const entry of allEntries) {
+    const player = entry.player;
+    const status = entry.status;
+    const jogo = entry.jogo;
+    const updatedAt = entry.updatedAt;
+    const countMinutes = entry.countMinutes || 0;
+    if (!groupedData[player]) groupedData[player] = { statuses: {} };
+    if (!groupedData[player].statuses[status]) {
+      groupedData[player].statuses[status] = {
+        updateAt: updatedAt,
+        countMinutes: countMinutes,
+      };
+      if (status === 'Jogando')
+        groupedData[player].statuses[status].jogo = jogo;
+    } else {
+      groupedData[player].statuses[status].countMinutes += countMinutes;
+      groupedData[player].statuses[status].updateAt = updatedAt;
+      if (status === 'Jogando' && jogo)
+        groupedData[player].statuses[status].jogo = jogo;
+    }
+  }
+
+  // Detectar mudanças para notificação (mantém fluxo)
+  const changes = detectChanges(existingData, allEntries);
+  if (changes.length > 0) await sendEmailNotification(changes);
 
   const command = new PutObjectCommand({
     Bucket: process.env.S3_BUCKET?.trim(),
     Key: filename,
-    Body: JSON.stringify(updatedData, null, 2),
+    Body: JSON.stringify(groupedData, null, 2),
     ContentType: 'application/json',
   });
 
   try {
-    console.log('📤 Enviando dados para S3...');
+    console.log('📤 Enviando dados agrupados para S3...');
     await s3Client.send(command);
-    console.log(
-      `✅ Dados salvos: ${filename} (${updatedData.length} entradas)`
-    );
+    console.log(`✅ Dados salvos: ${filename}`);
     console.log('🎯 Processo de salvamento completo!');
   } catch (err) {
     console.error('Erro ao enviar para S3:', err);
