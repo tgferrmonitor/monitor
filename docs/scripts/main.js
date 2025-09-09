@@ -45,26 +45,26 @@ async function loadPlayers() {
 // Busca dados diários
 async function fetchDailyData(isoDate) {
   const filename = convertToDDMMYY(isoDate);
-  const filenameWithExt = `${filename}.jso`;
-  // Tentar primeiro arquivo local (útil para GitHub Pages / testes locais)
-  try {
-    const localUrl = `./${filenameWithExt}?t=${Date.now()}`; // cache-bust
-    console.log('🔍 Tentando buscar localmente:', localUrl);
-    const localRes = await fetch(localUrl);
-    if (localRes.ok) {
-      const data = await localRes.json();
-      console.log(
-        '✅ Dados locais carregados:',
-        Object.keys(data || {}).length,
-        'jogadores'
-      );
-      return data;
-    }
-  } catch (e) {
-    console.log(
-      'ℹ️ Dados locais não disponíveis ou com erro, tentando bucket...'
-    );
-  }
+  const filenameWithExt = `${filename}.json`;
+  // // Tentar primeiro arquivo local (útil para GitHub Pages / testes locais)
+  // try {
+  //   const localUrl = `./${filenameWithExt}?t=${Date.now()}`; // cache-bust
+  //   console.log('🔍 Tentando buscar localmente:', localUrl);
+  //   const localRes = await fetch(localUrl);
+  //   if (localRes.ok) {
+  //     const data = await localRes.json();
+  //     console.log(
+  //       '✅ Dados locais carregados:',
+  //       Object.keys(data || {}).length,
+  //       'jogadores'
+  //     );
+  //     return data;
+  //   }
+  // } catch (e) {
+  //   console.log(
+  //     'ℹ️ Dados locais não disponíveis ou com erro, tentando bucket...'
+  //   );
+  // }
 
   const url = `${BUCKET_URL}/${filenameWithExt}?t=${Date.now()}`;
   console.log('🔍 Tentando buscar do bucket:', url);
