@@ -2,8 +2,8 @@ name: Monitor Roblox
 
 on:
   schedule:
-    # Executa a cada 5 minutos
-    - cron: '*/5 * * * *'
+    # Executa a cada 3 minutos
+    - cron: '*/3 * * * *'
   workflow_dispatch:
   push:
     branches: [main]
@@ -21,8 +21,9 @@ jobs:
       - uses: actions/setup-node@v3
         with:
           node-version: 18
+          cache: 'npm'
 
-      - run: npm install
+      - run: npm ci --prefer-offline --no-audit --no-fund
 
       - run: node monitor.js
         env:
