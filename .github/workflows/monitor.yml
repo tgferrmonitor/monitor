@@ -23,6 +23,15 @@ jobs:
           node-version: 18
           cache: 'npm'
 
+      - name: Ensure lockfile exists (generate package-lock.json if missing)
+        run: |
+          if [ ! -f package-lock.json ] && [ ! -f npm-shrinkwrap.json ] && [ ! -f yarn.lock ]; then
+            echo "No lockfile found. Generating package-lock.json with 'npm install --package-lock-only'"
+            npm install --package-lock-only
+          else
+            echo "Lockfile present, skipping generation"
+          fi
+
       - run: npm ci --prefer-offline --no-audit --no-fund
 
       - run: node monitor.js
