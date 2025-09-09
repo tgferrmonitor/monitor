@@ -361,59 +361,121 @@ function formatDateTime(dateString) {
 }
 
 function detectChanges(existingData, newData) {
-  // Apenas comparar o último status conhecido por jogador (baseado em updatedAt).
+  // Apenas comparar o último status conhecido por jogador (baseado em updatedAt / updateAt).
+  // Usar uma chave canônica por jogador: primeiro tentar extrair ID de 'Player <id>'
   const changes = [];
   const currentTime = new Date().toISOString();
 
   const eArr = Array.isArray(existingData) ? existingData : [];
   const nArr = Array.isArray(newData) ? newData : [];
 
-  // Construir um map { player -> lastEntry } a partir de existingData
-  const lastExistingByPlayer = new Map();
+  function canonicalKey(playerField) {
+    if (!playerField) return null;
+    if (/^\d+$/.test(String(playerField))) return String(playerField);
+    const m = String(playerField).match(/Player\s*(\d+)/i);
+    if (m) return m[1];
+    return String(playerField);
+  }
+
+  const DEBUG = process.env.DETECT_CHANGES_DEBUG !== '0';
+
+  // Construir um map { chaveCanonica -> lastEntry } a partir de existingData
+  const lastExistingByKey = new Map();
   for (const e of eArr) {
     if (!e || !e.player) continue;
-    const ts = e.updatedAt ? new Date(e.updatedAt).getTime() : 0;
-    const prev = lastExistingByPlayer.get(e.player);
+    const key = canonicalKey(e.player);
+    const ts =
+      e.updatedAt || e.updateAt
+        ? new Date(e.updatedAt || e.updateAt).getTime()
+        : 0;
+    const prev = lastExistingByKey.get(key);
     if (!prev || (prev._ts || 0) < ts) {
-      lastExistingByPlayer.set(e.player, { ...e, _ts: ts });
+      lastExistingByKey.set(key, { ...e, _ts: ts });
+      if (DEBUG) {
+        console.log(
+          '[detectChanges][existing] key=',
+          key,
+          'status=',
+          e.status,
+          'jogo=',
+          e.jogo,
+          'ts=',
+          new Date(ts).toISOString()
+        );
+      }
     }
   }
 
-  // Construir um map { player -> lastEntry } a partir de newData
-  const lastNewByPlayer = new Map();
+  // Construir um map { chaveCanonica -> lastEntry } a partir de newData
+  const lastNewByKey = new Map();
   for (const n of nArr) {
     if (!n || !n.player) continue;
-    const ts = n.updatedAt ? new Date(n.updatedAt).getTime() : 0;
-    const prev = lastNewByPlayer.get(n.player);
+    const key = canonicalKey(n.player);
+    const ts =
+      n.updatedAt || n.updateAt
+        ? new Date(n.updatedAt || n.updateAt).getTime()
+        : 0;
+    const prev = lastNewByKey.get(key);
     if (!prev || (prev._ts || 0) < ts) {
-      lastNewByPlayer.set(n.player, { ...n, _ts: ts });
+      lastNewByKey.set(key, { ...n, _ts: ts });
+      if (DEBUG) {
+        console.log(
+          '[detectChanges][new] key=',
+          key,
+          'status=',
+          n.status,
+          'jogo=',
+          n.jogo,
+          'ts=',
+          new Date(ts).toISOString()
+        );
+      }
     }
   }
 
-  // Comparar últimos estados por jogador
-  for (const [player, newEntry] of lastNewByPlayer.entries()) {
-    const existingEntry = lastExistingByPlayer.get(player);
+  // Comparar últimos estados por chave canônica
+  for (const [key, newEntry] of lastNewByKey.entries()) {
+    const existingEntry = lastExistingByKey.get(key);
+    const playerLabel = newEntry.player || existingEntry?.player || key;
+    if (DEBUG) {
+      console.log(
+        '[detectChanges][compare] key=',
+        key,
+        'existing=',
+        existingEntry
+          ? `${existingEntry.status}/${existingEntry.jogo}`
+          : 'NONE',
+        'new=',
+        `${newEntry.status}/${newEntry.jogo}`
+      );
+    }
+
     if (!existingEntry) {
-      changes.push({
-        player,
-        changeType: 'new',
-        from: { status: 'N/A', jogo: 'N/A' },
-        to: { status: newEntry.status, jogo: newEntry.jogo },
-        timestamp: currentTime,
-      });
+      // Só considerar novo se status/jogo estiverem definidos
+      if (newEntry.status || newEntry.jogo) {
+        changes.push({
+          player: playerLabel,
+          changeType: 'new',
+          from: { status: 'N/A', jogo: 'N/A' },
+          to: { status: newEntry.status, jogo: newEntry.jogo },
+          timestamp: currentTime,
+        });
+      }
       continue;
     }
 
     // Comparar somente status e jogo — ignorar countMinutes/updatedAt
-    if (
-      existingEntry.status !== newEntry.status ||
-      existingEntry.jogo !== newEntry.jogo
-    ) {
+    const existingStatus = existingEntry.status || '';
+    const existingJogo = existingEntry.jogo || '';
+    const newStatus = newEntry.status || '';
+    const newJogo = newEntry.jogo || '';
+
+    if (existingStatus !== newStatus || existingJogo !== newJogo) {
       changes.push({
-        player,
+        player: playerLabel,
         changeType: 'change',
-        from: { status: existingEntry.status, jogo: existingEntry.jogo },
-        to: { status: newEntry.status, jogo: newEntry.jogo },
+        from: { status: existingStatus, jogo: existingJogo },
+        to: { status: newStatus, jogo: newJogo },
         timestamp: currentTime,
       });
     }
