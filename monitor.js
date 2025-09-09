@@ -117,7 +117,7 @@ async function getUserPresence(userIds) {
     const text = await res.text();
     throw new Error(`Erro ao buscar presença: ${res.status} - ${text}`);
   }
-
+  console.log(res);
   return res.json();
 }
 
@@ -179,22 +179,13 @@ async function saveDailyData(filename, presenceData) {
     4: 'Invisível',
   };
 
-  // Agrupa dados por jogador/status
-  const allEntries = [...existingData];
-  if (presenceData && presenceData.userPresences) {
-    for (const info of presenceData.userPresences) {
-      const playerName = getPlayerName(info.userId);
-      const status = statusMap[info.userPresenceType] || 'Desconhecido';
-      const jogo = info.lastLocation || '';
-      allEntries.push({
-        player: playerName,
-        status,
-        jogo,
-        countMinutes: info.countMinutes || 0,
-        updatedAt: new Date().toISOString(),
-      });
-    }
-  }
+  // Processa e acumula minutos com base no histórico existente + presença atual
+  // processPlayerData retorna um array com entradas atualizadas (incluindo acumulação de minutos)
+  const allEntries = await processPlayerData(
+    existingData,
+    presenceData,
+    statusMap
+  );
 
   // Monta estrutura agrupada
   const groupedData = {};
@@ -213,8 +204,20 @@ async function saveDailyData(filename, presenceData) {
       if (status === 'Jogando')
         groupedData[player].statuses[status].jogo = jogo;
     } else {
+      // acumula minutos
       groupedData[player].statuses[status].countMinutes += countMinutes;
-      groupedData[player].statuses[status].updateAt = updatedAt;
+      // manter o updateAt mais recente
+      try {
+        const existingTs =
+          new Date(groupedData[player].statuses[status].updateAt).getTime() ||
+          0;
+        const incomingTs = new Date(updatedAt).getTime() || 0;
+        groupedData[player].statuses[status].updateAt = new Date(
+          Math.max(existingTs, incomingTs)
+        ).toISOString();
+      } catch (e) {
+        groupedData[player].statuses[status].updateAt = updatedAt;
+      }
       if (status === 'Jogando' && jogo)
         groupedData[player].statuses[status].jogo = jogo;
     }
@@ -236,6 +239,21 @@ async function saveDailyData(filename, presenceData) {
     await s3Client.send(command);
     console.log(`✅ Dados salvos: ${filename}`);
     console.log('🎯 Processo de salvamento completo!');
+    // Também gravar uma cópia local em docs/ para facilitar testes locais (frontend pode carregar o arquivo diretamente)
+    try {
+      const fs = await import('fs/promises');
+      await fs.writeFile(
+        `./docs/${filename}`,
+        JSON.stringify(groupedData, null, 2),
+        'utf8'
+      );
+      console.log(`💾 Cópia local gravada em ./docs/${filename}`);
+    } catch (werr) {
+      console.log(
+        'ℹ️ Não foi possível gravar cópia local:',
+        werr.message || werr
+      );
+    }
   } catch (err) {
     console.error('Erro ao enviar para S3:', err);
     throw err;
@@ -243,51 +261,67 @@ async function saveDailyData(filename, presenceData) {
 }
 
 async function processPlayerData(existingData, presenceData, statusMap) {
-  const currentTime = new Date().toISOString();
-  // Começa com todos os eventos anteriores
+  // Agora -> usar o algoritmo pedido:
+  // 1) obter último updatedAt entre os status gravados do jogador
+  // 2) calcular minutos entre esse updatedAt e agora
+  // 3) somar esses minutos no status retornado pelo endpoint (criar se necessário)
+  // Use UTC now for stored timestamps to avoid confusion; timezone offset only for display
+  const nowDate = new Date();
+  const nowISO = nowDate.toISOString();
+
+  // Começa com cópia dos eventos anteriores
   const updatedData = [...existingData];
 
   console.log(
     `🔄 Processando dados para ${
       presenceData.userPresences?.length || 0
-    } players...`
+    } players (algoritmo novo)...`
   );
 
   for (const info of presenceData.userPresences || []) {
     const playerName = getPlayerName(info.userId);
-    const status = statusMap[info.userPresenceType] || 'Desconhecido';
-    const jogo = info.lastLocation || 'N/A';
+    const returnedStatus = statusMap[info.userPresenceType] || 'Desconhecido';
+    const returnedJogo =
+      returnedStatus === 'Jogando' ? info.lastLocation || '' : '';
 
-    // Busca última entrada desse player
-    const lastEntry = [...updatedData]
-      .reverse()
-      .find((entry) => entry.player === playerName);
+    // Encontrar todas as entradas existentes para esse player
+    const playerEntries = (existingData || []).filter(
+      (e) => e.player === playerName
+    );
 
-    if (lastEntry && lastEntry.status === status && lastEntry.jogo === jogo) {
-      // Mesmo status/jogo: acumula minutos
-      const lastUpdate = new Date(lastEntry.updatedAt);
-      const now = new Date(currentTime);
-      const minutesDiff = Math.floor((now - lastUpdate) / (1000 * 60));
-      const validMinutesDiff = Math.min(minutesDiff, 60);
-      const newCountMinutes = Math.max(
-        0,
-        (lastEntry.countMinutes || 0) + validMinutesDiff
-      );
-      updatedData.push({
-        player: playerName,
-        status: status,
-        jogo: jogo,
-        countMinutes: newCountMinutes,
-        updatedAt: currentTime,
-      });
+    // Determinar lastUpdatedAt (maior) entre as entradas existentes
+    let lastUpdatedAt = null;
+    for (const e of playerEntries) {
+      const ts = e && e.updatedAt ? new Date(e.updatedAt).getTime() : 0;
+      if (!lastUpdatedAt || ts > lastUpdatedAt) lastUpdatedAt = ts;
+    }
+
+    const minutesDiff = lastUpdatedAt
+      ? Math.floor((nowDate.getTime() - lastUpdatedAt) / (1000 * 60))
+      : 0;
+    const validMinutes = Math.max(0, Math.min(minutesDiff, 60));
+
+    // Procurar se já existe uma entrada gravada para o status retornado (considerando jogo quando apropriado)
+    const existsIndex = updatedData.findIndex((e) => {
+      if (!e || e.player !== playerName) return false;
+      if (e.status !== returnedStatus) return false;
+      if (returnedStatus === 'Jogando') return (e.jogo || '') === returnedJogo;
+      return true; // para outros status, jogo não importa
+    });
+
+    if (existsIndex >= 0) {
+      // Soma minutos ao status retornado e atualiza timestamp
+      updatedData[existsIndex].countMinutes =
+        (updatedData[existsIndex].countMinutes || 0) + validMinutes;
+      updatedData[existsIndex].updatedAt = nowISO;
     } else {
-      // Mudança de status/jogo ou novo player: nova entrada zerada
+      // Cria nova entrada para o status retornado com os minutos calculados
       updatedData.push({
         player: playerName,
-        status: status,
-        jogo: jogo,
-        countMinutes: 0,
-        updatedAt: currentTime,
+        status: returnedStatus,
+        jogo: returnedJogo,
+        countMinutes: validMinutes,
+        updatedAt: nowISO,
       });
     }
   }

@@ -45,15 +45,36 @@ async function loadPlayers() {
 // Busca dados diários
 async function fetchDailyData(isoDate) {
   const filename = convertToDDMMYY(isoDate);
-  const url = `${BUCKET_URL}/${filename}.json`;
-  console.log('🔍 Tentando buscar:', url);
+  const filenameWithExt = `${filename}.json`;
+  // Tentar primeiro arquivo local (útil para GitHub Pages / testes locais)
+  try {
+    const localUrl = `./${filenameWithExt}?t=${Date.now()}`; // cache-bust
+    console.log('🔍 Tentando buscar localmente:', localUrl);
+    const localRes = await fetch(localUrl);
+    if (localRes.ok) {
+      const data = await localRes.json();
+      console.log(
+        '✅ Dados locais carregados:',
+        Object.keys(data || {}).length,
+        'jogadores'
+      );
+      return data;
+    }
+  } catch (e) {
+    console.log(
+      'ℹ️ Dados locais não disponíveis ou com erro, tentando bucket...'
+    );
+  }
+
+  const url = `${BUCKET_URL}/${filenameWithExt}?t=${Date.now()}`;
+  console.log('🔍 Tentando buscar do bucket:', url);
   try {
     const res = await fetch(url);
     console.log('📡 Response status:', res.status, res.statusText);
     if (res.ok) {
       const data = await res.json();
       console.log(
-        '✅ Dados carregados:',
+        '✅ Dados carregados do bucket:',
         Object.keys(data || {}).length,
         'jogadores'
       );
@@ -62,31 +83,78 @@ async function fetchDailyData(isoDate) {
       console.error('❌ Erro HTTP:', res.status, res.statusText);
     }
   } catch (e) {
-    console.error('❌ Erro na requisição:', e);
+    console.error('❌ Erro na requisição ao bucket:', e);
   }
   return {};
 }
 
+// Força atualização: limpa cache, tenta desregistrar service worker e recarrega o relatório
+async function forceRefreshData() {
+  const dateIso = document.getElementById('date').value;
+  if (!dateIso) return alert('Escolha uma data!');
+
+  // Clear HTTP cache by fetching with cache-bust and try to clear caches API
+  try {
+    if ('caches' in window) {
+      const keys = await caches.keys();
+      for (const k of keys) await caches.delete(k);
+      console.log('Caches apagados:', keys);
+    }
+  } catch (e) {
+    console.log('Erro ao limpar caches:', e);
+  }
+
+  // Unregister service worker to avoid cached responses
+  try {
+    if (swRegistration) {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const r of regs) {
+        await r.unregister();
+      }
+      swRegistration = null;
+      serviceWorkerReady = false;
+      console.log('Service worker desregistrado');
+    }
+  } catch (e) {
+    console.log('Erro ao desregistrar service worker:', e);
+  }
+
+  // Força recarga do relatório com cache-bust
+  try {
+    // Bump the timestamp param by re-calling loadReport which uses fetchDailyData with cache-bust
+    await loadReport();
+    alert(
+      'Dados atualizados (tentativa). Se ainda vir cache, limpe o cache do navegador.'
+    );
+  } catch (e) {
+    console.error('Erro ao recarregar relatório:', e);
+    alert('Erro ao forçar atualização. Veja console.');
+  }
+}
+
 // Agrega minutos por jogador/status
 function aggregateMinutes(data) {
-  const minutes = {};
+  const result = [];
   for (const player in data) {
-    const statuses = data[player].statuses;
+    const statuses = (data[player] && data[player].statuses) || {};
+    let latest = null;
+    let latestTs = 0;
     for (const status in statuses) {
-      const entry = statuses[status];
-      const key = `${player}|${status}`;
-      if (!minutes[key]) {
-        minutes[key] = {
+      const entry = statuses[status] || {};
+      const ts = entry.updateAt ? new Date(entry.updateAt).getTime() : 0;
+      if (!latest || ts >= latestTs) {
+        latestTs = ts;
+        latest = {
           player,
           status,
-          minutos: 0,
+          minutos: entry.countMinutes || 0,
           jogo: entry.jogo || '',
         };
       }
-      minutes[key].minutos += entry.countMinutes || 0;
     }
+    if (latest) result.push(latest);
   }
-  return Object.values(minutes);
+  return result;
 }
 
 // Gera histórico detalhado
