@@ -135,9 +135,32 @@ async function saveDailyData(filename, presenceData) {
     const chunks = [];
     for await (const chunk of stream) chunks.push(Buffer.from(chunk));
     const text = Buffer.concat(chunks).toString('utf8');
-    existingData = JSON.parse(text) || [];
+    const parsed = JSON.parse(text) || [];
+    // Compatibilidade: historicamente gravamos arrays; nova versão grava objeto agrupado.
+    // Se o arquivo for um objeto (grouped), convertemos para array de entradas para processamento.
+    if (parsed && !Array.isArray(parsed) && typeof parsed === 'object') {
+      const converted = [];
+      for (const [player, pdata] of Object.entries(parsed)) {
+        const statuses = pdata && pdata.statuses ? pdata.statuses : {};
+        for (const [status, sdata] of Object.entries(statuses)) {
+          converted.push({
+            player,
+            status,
+            jogo: sdata.jogo || '',
+            countMinutes: sdata.countMinutes || 0,
+            updatedAt:
+              sdata.updateAt || sdata.updatedAt || new Date().toISOString(),
+          });
+        }
+      }
+      existingData = converted;
+    } else {
+      existingData = parsed;
+    }
     console.log(
-      `📂 Dados existentes carregados: ${existingData.length} entradas`
+      `📂 Dados existentes carregados: ${
+        Array.isArray(existingData) ? existingData.length : 0
+      } entradas`
     );
   } catch (err) {
     if (err.name !== 'NoSuchKey') {
@@ -304,30 +327,56 @@ function formatDateTime(dateString) {
 }
 
 function detectChanges(existingData, newData) {
+  // Apenas comparar o último status conhecido por jogador (baseado em updatedAt).
   const changes = [];
   const currentTime = new Date().toISOString();
 
-  for (const newEntry of newData) {
-    const existingEntry = existingData.find(
-      (entry) => entry.player === newEntry.player
-    );
+  const eArr = Array.isArray(existingData) ? existingData : [];
+  const nArr = Array.isArray(newData) ? newData : [];
 
+  // Construir um map { player -> lastEntry } a partir de existingData
+  const lastExistingByPlayer = new Map();
+  for (const e of eArr) {
+    if (!e || !e.player) continue;
+    const ts = e.updatedAt ? new Date(e.updatedAt).getTime() : 0;
+    const prev = lastExistingByPlayer.get(e.player);
+    if (!prev || (prev._ts || 0) < ts) {
+      lastExistingByPlayer.set(e.player, { ...e, _ts: ts });
+    }
+  }
+
+  // Construir um map { player -> lastEntry } a partir de newData
+  const lastNewByPlayer = new Map();
+  for (const n of nArr) {
+    if (!n || !n.player) continue;
+    const ts = n.updatedAt ? new Date(n.updatedAt).getTime() : 0;
+    const prev = lastNewByPlayer.get(n.player);
+    if (!prev || (prev._ts || 0) < ts) {
+      lastNewByPlayer.set(n.player, { ...n, _ts: ts });
+    }
+  }
+
+  // Comparar últimos estados por jogador
+  for (const [player, newEntry] of lastNewByPlayer.entries()) {
+    const existingEntry = lastExistingByPlayer.get(player);
     if (!existingEntry) {
-      // Player novo
       changes.push({
-        player: newEntry.player,
+        player,
         changeType: 'new',
         from: { status: 'N/A', jogo: 'N/A' },
         to: { status: newEntry.status, jogo: newEntry.jogo },
         timestamp: currentTime,
       });
-    } else if (
+      continue;
+    }
+
+    // Comparar somente status e jogo — ignorar countMinutes/updatedAt
+    if (
       existingEntry.status !== newEntry.status ||
       existingEntry.jogo !== newEntry.jogo
     ) {
-      // Mudança detectada
       changes.push({
-        player: newEntry.player,
+        player,
         changeType: 'change',
         from: { status: existingEntry.status, jogo: existingEntry.jogo },
         to: { status: newEntry.status, jogo: newEntry.jogo },
