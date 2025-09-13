@@ -1,5 +1,5 @@
 [![Monitor Roblox](https://github.com/tgferrmonitor/monitor/actions/workflows/monitor.yml/badge.svg)](https://github.com/tgferrmonitor/monitor/actions/workflows/monitor.yml)
-
+[![pages-build-deployment](https://github.com/tgferrmonitor/monitor/actions/workflows/pages/pages-build-deployment/badge.svg)](https://github.com/tgferrmonitor/monitor/actions/workflows/pages/pages-build-deployment)
 Monitor
 
 Projeto simples para registrar e visualizar relatórios de presença/atividade de jogadores.
