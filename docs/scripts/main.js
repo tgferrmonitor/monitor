@@ -46,25 +46,6 @@ async function loadPlayers() {
 async function fetchDailyData(isoDate) {
   const filename = convertToDDMMYY(isoDate);
   const filenameWithExt = `${filename}.json`;
-  // // Tentar primeiro arquivo local (útil para GitHub Pages / testes locais)
-  // try {
-  //   const localUrl = `./${filenameWithExt}?t=${Date.now()}`; // cache-bust
-  //   console.log('🔍 Tentando buscar localmente:', localUrl);
-  //   const localRes = await fetch(localUrl);
-  //   if (localRes.ok) {
-  //     const data = await localRes.json();
-  //     console.log(
-  //       '✅ Dados locais carregados:',
-  //       Object.keys(data || {}).length,
-  //       'jogadores'
-  //     );
-  //     return data;
-  //   }
-  // } catch (e) {
-  //   console.log(
-  //     'ℹ️ Dados locais não disponíveis ou com erro, tentando bucket...'
-  //   );
-  // }
 
   const url = `${BUCKET_URL}/${filenameWithExt}?t=${Date.now()}`;
   console.log('🔍 Tentando buscar do bucket:', url);
@@ -137,22 +118,18 @@ function aggregateMinutes(data) {
   const result = [];
   for (const player in data) {
     const statuses = (data[player] && data[player].statuses) || {};
-    let latest = null;
-    let latestTs = 0;
+    
+    // Mostrar TODOS os status de cada jogador, não apenas o mais recente
     for (const status in statuses) {
       const entry = statuses[status] || {};
-      const ts = entry.updateAt ? new Date(entry.updateAt).getTime() : 0;
-      if (!latest || ts >= latestTs) {
-        latestTs = ts;
-        latest = {
-          player,
-          status,
-          minutos: entry.countMinutes || 0,
-          jogo: entry.jogo || '',
-        };
-      }
+      result.push({
+        player,
+        status,
+        minutos: entry.countMinutes || 0,
+        jogo: entry.jogo || '',
+        updateAt: entry.updateAt // Manter timestamp para referência
+      });
     }
-    if (latest) result.push(latest);
   }
   return result;
 }

@@ -22,13 +22,18 @@ function renderReport(aggregated, history, playerFilter) {
     if (playerFilter && item.player !== playerFilter) continue;
     const playerName = playersMap.get(item.player) || item.player;
     const badge = getStatusBadge(item.status);
+    // Normaliza minutos para formato "HHhMMm"
+    const horas = Math.floor(item.minutos / 60);
+    const minutosRestantes = item.minutos % 60;
+    const horasMinutosFormat = `${horas.toString().padStart(2, '0')}h${minutosRestantes.toString().padStart(2, '0')}m`;
+
     html += `
       <tr>
-        <td>${playerName}</td>
-        <td>${badge}</td>
-        <td>${item.minutos}</td>
-        <td>${(item.minutos / 60).toFixed(2)}</td>
-        <td>${item.jogo}</td>
+      <td>${playerName}</td>
+      <td>${badge}</td>
+      <td>${item.minutos}</td>
+      <td>${horasMinutosFormat}</td>
+      <td>${item.jogo}</td>
       </tr>
     `;
     found = true;
