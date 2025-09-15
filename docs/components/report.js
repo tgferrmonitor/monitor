@@ -9,7 +9,6 @@ function renderReport(aggregated, history, playerFilter) {
             <tr>
               <th>Jogador</th>
               <th>Status</th>
-              <th>Minutos</th>
               <th>Horas</th>
               <th>Jogo</th>
             </tr>
@@ -31,7 +30,6 @@ function renderReport(aggregated, history, playerFilter) {
       <tr>
       <td>${playerName}</td>
       <td>${badge}</td>
-      <td>${item.minutos}</td>
       <td>${horasMinutosFormat}</td>
       <td>${item.jogo}</td>
       </tr>
