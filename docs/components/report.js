@@ -1,8 +1,8 @@
 // Componente de relatório - renderiza tabela e histórico
-function renderReport(aggregated, history, playerFilter, gameFilter, gameSummary) {
+function renderReport(aggregated, history, playerFilter, gameFilter, gameSummary, gamePlayerStatuses) {
   let html = `
     <div class="report-section">
-      <h3>Resumo por jogo</h3>
+      <h3>${playerFilter ? `Resumo de jogos - ${playersMap.get(playerFilter) || playerFilter}` : 'Resumo por jogo'}</h3>
       <div class="table-wrap">
         <table>
           <thead>
@@ -15,14 +15,51 @@ function renderReport(aggregated, history, playerFilter, gameFilter, gameSummary
           <tbody>
   `;
 
-  for (const game of gameSummary) {
-    if (gameFilter && game.jogo !== gameFilter) continue;
+  // Agora montamos o resumo por jogo mostrando o status ATUAL de cada jogador
+  // Obter lista de jogos como união entre gameSummary e gamePlayerStatuses
+  const gamesSet = new Set();
+  if (gameSummary && Array.isArray(gameSummary)) gameSummary.forEach(g => gamesSet.add(g.jogo));
+  if (gamePlayerStatuses) Object.keys(gamePlayerStatuses).forEach(g => gamesSet.add(g));
+
+  const gamesList = Array.from(gamesSet).sort();
+  for (const jogo of gamesList) {
+    if (gameFilter && jogo !== gameFilter) continue;
+
+    const playersForGame = (gamePlayerStatuses && gamePlayerStatuses[jogo]) ? gamePlayerStatuses[jogo] : [];
+
+    // Se houver filtro de jogador e este jogador não estiver presente neste jogo, pular
+    if (playerFilter && !playersForGame.some(p => p.player === playerFilter)) continue;
+
+    // Tempo exibido: se filtrado por jogador, mostrar o tempo desse jogador neste jogo;
+    // caso contrário, usar o tempo agregado do resumo geral
+    let tempoDisplay = '';
+    if (playerFilter) {
+      const playerTimeInGame = aggregated
+        .filter(item => item.player === playerFilter && item.jogo === jogo)
+        .reduce((total, item) => total + item.minutos, 0);
+      tempoDisplay = formatMinutesToHours(playerTimeInGame);
+    } else {
+      const summaryEntry = (gameSummary || []).find(s => s.jogo === jogo);
+      if (summaryEntry) tempoDisplay = summaryEntry.tempoFormatado;
+      else tempoDisplay = formatMinutesToHours(playersForGame.reduce((s, p) => s + (p.countMinutes || 0), 0));
+    }
+
+    // Monta HTML para coluna de jogadores com status atual e timestamp
+    let playersHtml = '<div style="display:flex; flex-direction:column; gap:6px;">';
+    for (const p of playersForGame) {
+      if (playerFilter && p.player !== playerFilter) continue;
+      const name = playersMap.get(p.player) || p.player;
+      const badge = getStatusBadge(p.status);
+      const ts = p.updateAt ? new Date(p.updateAt).toLocaleString('pt-BR') : 'sem data';
+      playersHtml += `<div><strong>${name}</strong> ${badge} <span class="muted">(${ts})</span></div>`;
+    }
+    playersHtml += '</div>';
 
     html += `
       <tr>
-        <td>${game.jogo}</td>
-        <td>${game.tempoFormatado}</td>
-        <td>${game.totalJogadores}</td>
+        <td>${jogo}</td>
+        <td>${tempoDisplay}</td>
+        <td>${playersHtml}</td>
       </tr>
     `;
   }
@@ -85,6 +122,14 @@ function renderReport(aggregated, history, playerFilter, gameFilter, gameSummary
   html += `
     <div class="history-section" style="margin-top: 32px;">
       <h3>Histórico detalhado por jogador</h3>
+      <div style="background-color: var(--md-sys-color-primary-container); padding: 12px; border-radius: 8px; margin-bottom: 16px; font-size: 0.9em;">
+        <strong>📋 Como ler o histórico:</strong>
+        <ul style="margin: 8px 0 0 20px; line-height: 1.5;">
+          <li><strong>Horário:</strong> Momento exato quando o jogador mudou de status ou jogo</li>
+          <li><strong>Duração da sessão:</strong> Por quanto tempo ficou naquele status específico</li>
+          <li><strong>Tempo acumulado:</strong> Total de tempo registrado para aquele status/jogo no dia</li>
+        </ul>
+      </div>
       <button class="btn secondary" onclick="exportHistoryCSV(window.lastDailyData)">
         📄 Baixar CSV do histórico
       </button>
@@ -117,11 +162,28 @@ function renderReport(aggregated, history, playerFilter, gameFilter, gameSummary
       const timeDisplay = ev.hora
         ? new Date(ev.hora).toLocaleTimeString('pt-BR')
         : '';
+
+      // Melhorar descrição do que representa cada informação
+      const gameInfo = ev.jogo !== 'Sem jogo' ? `🎮 ${ev.jogo}` : '⭕ Sem jogo';
+
+      // Informação sobre duração da sessão
+      const duracaoInfo = ev.duracaoSessao !== 'Sessão ativa'
+        ? `⏰ <strong>Duração desta sessão:</strong> ${ev.duracaoSessao}`
+        : `⏰ <strong>Sessão ainda ativa</strong> (ou última do dia)`;
+
       html += `
-        <li>
-          ${timeDisplay} - ${badge} -
-          <span class="muted">${ev.jogo}</span>
-          <span class="muted">Total: ${ev.tempoFormatado}</span>
+        <li style="padding: 12px 0; border-bottom: 1px solid var(--md-sys-color-outline-variant);">
+          <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+            <strong style="color: var(--md-sys-color-primary);">${timeDisplay}</strong>
+            - ${badge} - ${gameInfo}
+          </div>
+          <div style="font-size: 0.85em; color: var(--md-sys-color-on-surface-variant); margin-left: 16px; line-height: 1.4;">
+            ${duracaoInfo}
+            <br>
+            📊 <strong>Tempo total acumulado neste status/jogo:</strong> ${ev.tempoFormatado}
+            <br>
+            <em style="opacity: 0.8;">💡 O horário ${timeDisplay} marca quando o jogador ${getStatusAction(ev.status)}</em>
+          </div>
         </li>
       `;
     }
@@ -152,6 +214,18 @@ function getStatusBadge(status) {
   return badges[status] || `<span class="badge">${status}</span>`;
 }
 
+// Explica a ação do status
+function getStatusAction(status) {
+  const actions = {
+    'Online': 'ficou online (disponível no Roblox)',
+    'Jogando': 'começou a jogar ou mudou de jogo',
+    'No Studio': 'entrou no Roblox Studio',
+    'Offline': 'ficou offline ou fechou o Roblox',
+    'Invisível': 'ativou modo invisível'
+  };
+  return actions[status] || `mudou para "${status}"`;
+}
+
 // Função principal de carregamento do relatório
 async function loadReport() {
   const dateIso = document.getElementById('date').value;
@@ -170,12 +244,13 @@ async function loadReport() {
     // Popula o filtro de jogos com base nos dados carregados
     populateGameFilter(dailyData);
 
-    const aggregated = aggregateMinutes(dailyData);
-    const history = buildHistory(dailyData);
-    const gameSummary = generateGameSummary(dailyData);
+  const aggregated = aggregateMinutes(dailyData);
+  const history = buildHistory(dailyData);
+  const gameSummary = generateGameSummary(dailyData);
+  const gamePlayerStatuses = buildGamePlayerStatuses(dailyData);
 
-    // Renderiza relatório com ambos os filtros
-    const reportHTML = renderReport(aggregated, history, playerFilter, gameFilter, gameSummary);
+  // Renderiza relatório com ambos os filtros
+  const reportHTML = renderReport(aggregated, history, playerFilter, gameFilter, gameSummary, gamePlayerStatuses);
     reportArea.innerHTML = reportHTML;
 
     // Salva dados para exportação CSV

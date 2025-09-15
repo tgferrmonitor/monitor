@@ -290,6 +290,55 @@ details {
   overflow: hidden;
 }
 
+/* Resumo por jogo: coluna de jogadores (lista de players com status e timestamp) */
+.table-wrap td .player-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.table-wrap .player-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background-color: var(--md-sys-color-surface-variant);
+}
+
+.table-wrap .player-item strong {
+  margin-right: 6px;
+}
+
+.table-wrap .player-ts {
+  font-size: 0.8rem;
+  color: var(--md-sys-color-on-surface-variant);
+  margin-left: auto;
+  white-space: nowrap;
+}
+
+/* garantir que a coluna de jogadores não quebre o layout */
+th:nth-child(3),
+td:nth-child(3) {
+  width: 38%;
+  max-width: 420px;
+}
+
+@media (max-width: 768px) {
+  th:nth-child(3),
+  td:nth-child(3) {
+    width: auto;
+    max-width: none;
+  }
+  .table-wrap .player-item {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .table-wrap .player-ts {
+    margin-left: 0;
+  }
+}
+
 summary {
   padding: 16px;
   cursor: pointer;

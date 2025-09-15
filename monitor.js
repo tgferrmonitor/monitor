@@ -26,18 +26,44 @@ if (process.env.ALLOW_SELF_SIGNED === '1') {
 // HTTPS Agent para ignorar certificados inválidos (útil em ambientes de teste)
 const httpsAgent = new https.Agent({ rejectUnauthorized: false });
 
-// Configurar cliente S3 com NodeHttpHandler usando httpsAgent
-const s3Client = new S3Client({
-  region: process.env.S3_REGION?.trim(),
-  endpoint: process.env.S3_ENDPOINT?.trim(),
-  credentials: {
-    accessKeyId: process.env.S3_KEY?.trim(),
-    secretAccessKey: process.env.S3_SECRET?.trim(),
-  },
-});
+// Ambiente de desenvolvimento (não exige S3)
+const IS_DEV = process.env.DEV === '1' || process.env.NO_S3 === '1';
+
+// Configurar cliente S3 com NodeHttpHandler usando httpsAgent (pode não ser usado em DEV)
+let s3Client = null;
+try {
+  s3Client = new S3Client({
+    region: process.env.S3_REGION?.trim(),
+    endpoint: process.env.S3_ENDPOINT?.trim(),
+    credentials: {
+      accessKeyId: process.env.S3_KEY?.trim(),
+      secretAccessKey: process.env.S3_SECRET?.trim(),
+    },
+  });
+} catch (e) {
+  // continuará como null em ambientes sem configuração
+  s3Client = null;
+}
 
 // Carregar configs
-const PLAYERS = JSON.parse(process.env.PLAYERS || '[]');
+// PLAYERS pode ser um JSON array ou uma lista CSV — suportamos ambos para conveniência
+let PLAYERS = [];
+try {
+  const rawPlayers = process.env.PLAYERS || '[]';
+  PLAYERS = JSON.parse(rawPlayers);
+  if (!Array.isArray(PLAYERS)) PLAYERS = [];
+} catch (e) {
+  // tentar interpretar como CSV
+  const raw = (process.env.PLAYERS || '').trim();
+  if (raw) {
+    PLAYERS = raw
+      .split(/[,;\s]+/)
+      .map((s) => s.trim())
+      .filter(Boolean);
+  } else {
+    PLAYERS = [];
+  }
+}
 const ROBLOSECURITY = process.env.ROBLOSECURITY?.trim();
 const TZ_OFFSET_MINUTES = parseInt(process.env.TZ_OFFSET_MINUTES || '0', 10);
 
@@ -75,6 +101,10 @@ function getPlayerName(userId) {
 // Validação simples de ambiente para evitar mensagens crípticas do SDK
 function validateS3Env() {
   const missing = [];
+  if (IS_DEV) {
+    console.log('⚠️ Rodando em modo DEV/NO_S3 — validação S3 ignorada');
+    return;
+  }
   if (!process.env.S3_BUCKET?.trim()) missing.push('S3_BUCKET');
   if (!process.env.S3_KEY?.trim()) missing.push('S3_KEY');
   if (!process.env.S3_SECRET?.trim()) missing.push('S3_SECRET');
@@ -95,6 +125,13 @@ try {
 } catch (err) {
   console.error('Aborting due to missing configuration.');
   process.exit(1);
+}
+
+// Se estamos em DEV e não há PLAYERS definidos, permitir execução sem lançar erro
+if (IS_DEV && (!PLAYERS || PLAYERS.length === 0)) {
+  console.log(
+    '⚠️ DEV mode: PLAYERS vazio — o backend continuará, mas não fará chamadas reais de presença'
+  );
 }
 
 async function getUserPresence(userIds) {
@@ -235,28 +272,42 @@ async function saveDailyData(filename, presenceData) {
   });
 
   try {
-    console.log('📤 Enviando dados agrupados para S3...');
-    await s3Client.send(command);
-    console.log(`✅ Dados salvos: ${filename}`);
-    console.log('🎯 Processo de salvamento completo!');
-    // Também gravar uma cópia local em docs/ para facilitar testes locais (frontend pode carregar o arquivo diretamente)
-    try {
+    if (IS_DEV || !s3Client) {
+      console.log(
+        'ℹ️ Modo DEV/NO_S3 ativo ou S3 não configurado — salvando somente localmente'
+      );
       const fs = await import('fs/promises');
       await fs.writeFile(
         `./docs/${filename}`,
         JSON.stringify(groupedData, null, 2),
         'utf8'
       );
-      console.log(`💾 Cópia local gravada em ./docs/${filename}`);
-    } catch (werr) {
-      console.log(
-        'ℹ️ Não foi possível gravar cópia local:',
-        werr.message || werr
-      );
+      console.log(`� Cópia local gravada em ./docs/${filename}`);
+      console.log('✅ (DEV) Processo de salvamento completo!');
+    } else {
+      console.log('�📤 Enviando dados agrupados para S3...');
+      await s3Client.send(command);
+      console.log(`✅ Dados salvos: ${filename}`);
+      console.log('🎯 Processo de salvamento completo!');
+      // Também gravar uma cópia local em docs/ para facilitar testes locais (frontend pode carregar o arquivo diretamente)
+      try {
+        const fs = await import('fs/promises');
+        await fs.writeFile(
+          `./docs/${filename}`,
+          JSON.stringify(groupedData, null, 2),
+          'utf8'
+        );
+        console.log(`💾 Cópia local gravada em ./docs/${filename}`);
+      } catch (werr) {
+        console.log(
+          'ℹ️ Não foi possível gravar cópia local:',
+          werr.message || werr
+        );
+      }
     }
   } catch (err) {
-    console.error('Erro ao enviar para S3:', err);
-    throw err;
+    console.error('Erro ao enviar para S3/local:', err);
+    if (!IS_DEV) throw err;
   }
 }
 

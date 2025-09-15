@@ -195,6 +195,49 @@ function generateGameSummary(data) {
   return summary;
 }
 
+// Constrói um mapa de jogo -> lista de { player, status, updateAt }
+function buildGamePlayerStatuses(data) {
+  const map = {};
+
+  for (const player in data) {
+    const statuses = (data[player] && data[player].statuses) || {};
+
+    // Encontrar o status mais recente do jogador (timestamp máximo)
+    let latest = null;
+    let latestTs = 0;
+    for (const status in statuses) {
+      const entry = statuses[status] || {};
+      const ts = entry.updateAt ? new Date(entry.updateAt).getTime() : 0;
+      if (ts >= latestTs) {
+        latestTs = ts;
+        latest = { status, entry };
+      }
+    }
+
+    if (latest) {
+      const jogo = (latest.entry && latest.entry.jogo) || 'Sem jogo';
+      if (!map[jogo]) map[jogo] = [];
+      map[jogo].push({
+        player,
+        status: latest.status,
+        updateAt: latest.entry.updateAt || null,
+        countMinutes: latest.entry.countMinutes || 0
+      });
+    }
+  }
+
+  // Ordenar jogadores em cada jogo por horário descendente (mais recente primeiro)
+  for (const jogo in map) {
+    map[jogo].sort((a, b) => {
+      const ta = a.updateAt ? new Date(a.updateAt).getTime() : 0;
+      const tb = b.updateAt ? new Date(b.updateAt).getTime() : 0;
+      return tb - ta;
+    });
+  }
+
+  return map;
+}
+
 // Formata minutos para HHhMMm
 function formatMinutesToHours(minutos) {
   const horas = Math.floor(minutos / 60);
@@ -263,6 +306,9 @@ function buildHistory(data) {
   for (const player in data) {
     history[player] = [];
     const statuses = data[player].statuses;
+    const events = [];
+
+    // Primeiro, coletamos todos os eventos com seus timestamps
     for (const status in statuses) {
       const entry = statuses[status];
       const minutos = entry.countMinutes || 0;
@@ -270,16 +316,40 @@ function buildHistory(data) {
       const minutosRestantes = minutos % 60;
       const horasMinutosFormat = `${horas.toString().padStart(2, '0')}h${minutosRestantes.toString().padStart(2, '0')}m`;
 
-      history[player].push({
+      events.push({
         status,
         jogo: entry.jogo || 'Sem jogo',
         minutos: minutos,
         tempoFormatado: horasMinutosFormat,
         hora: entry.updateAt,
+        timestamp: entry.updateAt ? new Date(entry.updateAt).getTime() : 0
       });
     }
-    // Ordenar por hora para mostrar cronologicamente
-    history[player].sort((a, b) => new Date(a.hora) - new Date(b.hora));
+
+    // Ordenar por timestamp para calcular durações
+    events.sort((a, b) => a.timestamp - b.timestamp);
+
+    // Calcular duração de cada sessão
+    for (let i = 0; i < events.length; i++) {
+      const event = events[i];
+      const nextEvent = events[i + 1];
+
+      let duracaoSessao = 'Sessão ativa';
+      let duracaoMinutos = 0;
+
+      if (nextEvent) {
+        duracaoMinutos = Math.round((nextEvent.timestamp - event.timestamp) / (1000 * 60));
+        const duracaoHoras = Math.floor(duracaoMinutos / 60);
+        const duracaoMinutosRestantes = duracaoMinutos % 60;
+        duracaoSessao = `${duracaoHoras.toString().padStart(2, '0')}h${duracaoMinutosRestantes.toString().padStart(2, '0')}m`;
+      }
+
+      history[player].push({
+        ...event,
+        duracaoSessao,
+        duracaoMinutos
+      });
+    }
   }
   return history;
 }

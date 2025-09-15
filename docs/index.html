@@ -20,36 +20,40 @@
         <button id="themeToggle" class="theme-toggle">🌙 Tema Escuro</button>
       </header>
 
-      <section class="controls" style="align-items: end">
-        <label>
-          Data:
-          <input type="date" id="date" />
-        </label>
-        <label>
-          Jogador:
-          <select id="playerFilter">
-            <option value="">(todos)</option>
-          </select>
-        </label>
-        <label>
-          Jogo:
-          <select id="gameFilter">
-            <option value="">(todos)</option>
-          </select>
-        </label>
-        <button class="btn" onclick="loadReport()">📊 Carregar</button>
-        <button class="btn secondary" onclick="setTodayInputs()">
-          📅 Hoje
-        </button>
-        <button class="btn secondary" onclick="exportCSV()">
-          📄 Exportar CSV
-        </button>
-        <button class="btn secondary" onclick="printReport()">
-          🖨️ Imprimir
-        </button>
-        <button class="btn warning" onclick="forceRefreshData()">
-          🔄 Forçar atualizar dados
-        </button>
+      <section class="controls" aria-label="Controles do relatório">
+        <div class="controls-filters" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; align-items:end;">
+          <label class="control-item">
+            <div class="control-label">Data</div>
+            <input type="date" id="date" />
+          </label>
+
+          <label class="control-item">
+            <div class="control-label">Jogador</div>
+            <select id="playerFilter">
+              <option value="">(todos)</option>
+            </select>
+          </label>
+
+          <label class="control-item">
+            <div class="control-label">Jogo</div>
+            <select id="gameFilter">
+              <option value="">(todos)</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="controls-actions" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
+          <button class="btn" onclick="loadReport()">📊 Carregar</button>
+          <button class="btn secondary" onclick="setTodayInputs()">📅 Hoje</button>
+          <button class="btn secondary" onclick="exportCSV()">📄 Exportar CSV</button>
+          <button class="btn secondary" onclick="printReport()">🖨️ Imprimir</button>
+          <button class="btn warning" onclick="forceRefreshData()">🔄 Forçar atualizar dados</button>
+          <button class="btn" id="clearFilters" onclick="(function(){document.getElementById('playerFilter').value=''; document.getElementById('gameFilter').value='';})()">✖ Limpar filtros</button>
+        </div>
+
+        <div class="controls-help" style="margin-top:8px; font-size:0.9rem; color:var(--md-sys-color-on-surface-variant);">
+          Dica: selecione uma data e use os filtros de <strong>Jogador</strong> e <strong>Jogo</strong> para enxergar apenas o que interessa.
+        </div>
       </section>
 
       <main id="reportArea" class="card">
