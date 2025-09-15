@@ -1,8 +1,38 @@
 // Componente de relatório - renderiza tabela e histórico
-function renderReport(aggregated, history, playerFilter) {
+function renderReport(aggregated, history, playerFilter, gameFilter, gameSummary) {
   let html = `
     <div class="report-section">
-      <h3>Tempo por jogador, jogo e status</h3>
+      <h3>Resumo por jogo</h3>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Jogo</th>
+              <th>Tempo Total</th>
+              <th>Jogadores</th>
+            </tr>
+          </thead>
+          <tbody>
+  `;
+
+  for (const game of gameSummary) {
+    if (gameFilter && game.jogo !== gameFilter) continue;
+
+    html += `
+      <tr>
+        <td>${game.jogo}</td>
+        <td>${game.tempoFormatado}</td>
+        <td>${game.totalJogadores}</td>
+      </tr>
+    `;
+  }
+
+  html += `
+          </tbody>
+        </table>
+      </div>
+
+      <h3 style="margin-top: 32px;">Tempo por jogador, jogo e status</h3>
       <div class="table-wrap">
         <table>
           <thead>
@@ -18,7 +48,10 @@ function renderReport(aggregated, history, playerFilter) {
 
   let found = false;
   for (const item of aggregated) {
+    // Aplicar filtros
     if (playerFilter && item.player !== playerFilter) continue;
+    if (gameFilter && item.jogo !== gameFilter) continue;
+
     const playerName = playersMap.get(item.player) || item.player;
     const badge = getStatusBadge(item.status);
     // Normaliza minutos para formato "HHhMMm"
@@ -45,7 +78,7 @@ function renderReport(aggregated, history, playerFilter) {
 
   if (!found) {
     html +=
-      '<p style="margin-top:16px;">Nenhum dado para esta data/jogador.</p>';
+      '<p style="margin-top:16px;">Nenhum dado para esta data/jogador/jogo.</p>';
   }
 
   // Histórico por player com accordion
@@ -58,17 +91,28 @@ function renderReport(aggregated, history, playerFilter) {
   `;
 
   for (const player in history) {
+    // Aplicar filtro de jogador no histórico também
+    if (playerFilter && player !== playerFilter) continue;
+
     const playerName = playersMap.get(player) || player;
+
+    // Filtrar eventos do histórico se necessário
+    const filteredEvents = gameFilter
+      ? history[player].filter(ev => ev.jogo === gameFilter)
+      : history[player];
+
+    if (filteredEvents.length === 0) continue; // Pular se não há eventos após filtro
+
     html += `
       <details style="margin-top: 16px;">
         <summary>
           <strong>${playerName}</strong>
-          <span class="muted">(${history[player].length} eventos)</span>
+          <span class="muted">(${filteredEvents.length} eventos)</span>
         </summary>
         <ul>
     `;
 
-    for (const ev of history[player]) {
+    for (const ev of filteredEvents) {
       const badge = getStatusBadge(ev.status);
       const timeDisplay = ev.hora
         ? new Date(ev.hora).toLocaleTimeString('pt-BR')
@@ -77,7 +121,7 @@ function renderReport(aggregated, history, playerFilter) {
         <li>
           ${timeDisplay} - ${badge} -
           <span class="muted">${ev.jogo}</span>
-          <span class="muted">Total: ${ev.minutos} min</span>
+          <span class="muted">Total: ${ev.tempoFormatado}</span>
         </li>
       `;
     }
@@ -114,6 +158,7 @@ async function loadReport() {
   if (!dateIso) return alert('Escolha uma data!');
 
   const playerFilter = document.getElementById('playerFilter').value;
+  const gameFilter = document.getElementById('gameFilter').value;
   const reportArea = document.getElementById('reportArea');
 
   // Loading state
@@ -121,11 +166,16 @@ async function loadReport() {
 
   try {
     const dailyData = await fetchDailyData(dateIso);
+
+    // Popula o filtro de jogos com base nos dados carregados
+    populateGameFilter(dailyData);
+
     const aggregated = aggregateMinutes(dailyData);
     const history = buildHistory(dailyData);
+    const gameSummary = generateGameSummary(dailyData);
 
-    // Renderiza relatório
-    const reportHTML = renderReport(aggregated, history, playerFilter);
+    // Renderiza relatório com ambos os filtros
+    const reportHTML = renderReport(aggregated, history, playerFilter, gameFilter, gameSummary);
     reportArea.innerHTML = reportHTML;
 
     // Salva dados para exportação CSV

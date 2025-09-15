@@ -42,6 +42,51 @@ async function loadPlayers() {
   }
 }
 
+// Popula lista de jogos baseado nos dados carregados
+function populateGameFilter(data) {
+  const gameFilter = document.getElementById('gameFilter');
+  const games = new Set();
+
+  // Limpa opções existentes (exceto "todos")
+  gameFilter.innerHTML = '<option value="">(todos)</option>';
+
+  // Coleta todos os jogos únicos dos dados
+  for (const player in data) {
+    const statuses = (data[player] && data[player].statuses) || {};
+    for (const status in statuses) {
+      const entry = statuses[status] || {};
+      const jogo = entry.jogo;
+      if (jogo && jogo !== 'Sem jogo') {
+        games.add(jogo);
+      }
+    }
+  }
+
+  // Adiciona jogos ao select
+  const sortedGames = Array.from(games).sort();
+  for (const game of sortedGames) {
+    const opt = document.createElement('option');
+    opt.value = game;
+    opt.textContent = game;
+    gameFilter.appendChild(opt);
+  }
+
+  // Adiciona "Sem jogo" no final se houver dados sem jogo
+  for (const player in data) {
+    const statuses = (data[player] && data[player].statuses) || {};
+    for (const status in statuses) {
+      const entry = statuses[status] || {};
+      if (!entry.jogo || entry.jogo === 'Sem jogo') {
+        const opt = document.createElement('option');
+        opt.value = 'Sem jogo';
+        opt.textContent = 'Sem jogo';
+        gameFilter.appendChild(opt);
+        break;
+      }
+    }
+  }
+}
+
 // Busca dados diários
 async function fetchDailyData(isoDate) {
   const filename = convertToDDMMYY(isoDate);
@@ -113,24 +158,102 @@ async function forceRefreshData() {
   }
 }
 
-// Agrega minutos por jogador/status
-function aggregateMinutes(data) {
-  const result = [];
+// Gera resumo de tempo total por jogo
+function generateGameSummary(data) {
+  const gameSummary = {};
+
   for (const player in data) {
     const statuses = (data[player] && data[player].statuses) || {};
 
-    // Mostrar TODOS os status de cada jogador, não apenas o mais recente
     for (const status in statuses) {
       const entry = statuses[status] || {};
-      result.push({
-        player,
+      const jogo = entry.jogo || 'Sem jogo';
+      const minutos = entry.countMinutes || 0;
+
+      if (!gameSummary[jogo]) {
+        gameSummary[jogo] = {
+          totalMinutos: 0,
+          jogadores: new Set()
+        };
+      }
+
+      gameSummary[jogo].totalMinutos += minutos;
+      gameSummary[jogo].jogadores.add(player);
+    }
+  }
+
+  // Converter para array e ordenar por tempo total
+  const summary = Object.entries(gameSummary)
+    .map(([jogo, dados]) => ({
+      jogo,
+      totalMinutos: dados.totalMinutos,
+      totalJogadores: dados.jogadores.size,
+      tempoFormatado: formatMinutesToHours(dados.totalMinutos)
+    }))
+    .sort((a, b) => b.totalMinutos - a.totalMinutos);
+
+  return summary;
+}
+
+// Formata minutos para HHhMMm
+function formatMinutesToHours(minutos) {
+  const horas = Math.floor(minutos / 60);
+  const minutosRestantes = minutos % 60;
+  return `${horas.toString().padStart(2, '0')}h${minutosRestantes.toString().padStart(2, '0')}m`;
+}
+
+// Agrega minutos por jogador/status/jogo
+function aggregateMinutes(data) {
+  const gameAggregation = {};
+
+  // Primeiro passo: agregar por jogo
+  for (const player in data) {
+    const statuses = (data[player] && data[player].statuses) || {};
+
+    for (const status in statuses) {
+      const entry = statuses[status] || {};
+      const jogo = entry.jogo || 'Sem jogo';
+      const minutos = entry.countMinutes || 0;
+
+      if (!gameAggregation[jogo]) {
+        gameAggregation[jogo] = {};
+      }
+
+      if (!gameAggregation[jogo][player]) {
+        gameAggregation[jogo][player] = {
+          totalMinutos: 0,
+          statuses: []
+        };
+      }
+
+      gameAggregation[jogo][player].totalMinutos += minutos;
+      gameAggregation[jogo][player].statuses.push({
         status,
-        minutos: entry.countMinutes || 0,
-        jogo: entry.jogo || '',
-        updateAt: entry.updateAt // Manter timestamp para referência
+        minutos,
+        updateAt: entry.updateAt
       });
     }
   }
+
+  // Segundo passo: converter para formato da tabela
+  const result = [];
+  for (const jogo in gameAggregation) {
+    for (const player in gameAggregation[jogo]) {
+      const playerData = gameAggregation[jogo][player];
+
+      // Para cada status do jogador neste jogo
+      for (const statusInfo of playerData.statuses) {
+        result.push({
+          player,
+          status: statusInfo.status,
+          jogo,
+          minutos: statusInfo.minutos,
+          updateAt: statusInfo.updateAt
+        });
+      }
+    }
+  }
+
   return result;
 }
 
@@ -142,13 +265,21 @@ function buildHistory(data) {
     const statuses = data[player].statuses;
     for (const status in statuses) {
       const entry = statuses[status];
+      const minutos = entry.countMinutes || 0;
+      const horas = Math.floor(minutos / 60);
+      const minutosRestantes = minutos % 60;
+      const horasMinutosFormat = `${horas.toString().padStart(2, '0')}h${minutosRestantes.toString().padStart(2, '0')}m`;
+
       history[player].push({
         status,
-        jogo: entry.jogo || '',
-        minutos: entry.countMinutes || 0,
+        jogo: entry.jogo || 'Sem jogo',
+        minutos: minutos,
+        tempoFormatado: horasMinutosFormat,
         hora: entry.updateAt,
       });
     }
+    // Ordenar por hora para mostrar cronologicamente
+    history[player].sort((a, b) => new Date(a.hora) - new Date(b.hora));
   }
   return history;
 }
