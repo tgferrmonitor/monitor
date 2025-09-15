@@ -118,7 +118,7 @@ function aggregateMinutes(data) {
   const result = [];
   for (const player in data) {
     const statuses = (data[player] && data[player].statuses) || {};
-    
+
     // Mostrar TODOS os status de cada jogador, não apenas o mais recente
     for (const status in statuses) {
       const entry = statuses[status] || {};
