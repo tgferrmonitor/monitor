@@ -1,69 +1,62 @@
 <!DOCTYPE html>
-<html lang="pt-BR">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Monitor Roblox - Relatório de Jogadores</title>
-    <meta
-      name="description"
-      content="Monitor de atividade dos jogadores Roblox com relatórios detalhados"
-    />
-    <link rel="stylesheet" href="styles/main.css" />
-  </head>
-  <body>
-    <div class="container">
-      <header class="header">
-        <div>
-          <h1>🎮 Monitor Roblox</h1>
-          <div class="muted">Tempo jogado por jogador, por jogo e status</div>
-        </div>
-        <button id="themeToggle" class="theme-toggle">🌙 Tema Escuro</button>
-      </header>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Go For Key</title>
+    <!-- Fonts para o MUI -->
+    <link rel="stylesheet" href="https://googleapis.com" />
+    <!-- MUI CSS (Emotion & Styled Engine) -->
+    <script src="https://unpkg.com"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            /* Cor de fundo cinza similar ao Chrome */
+            background-color: #f1f3f4; 
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-family: 'Roboto', sans-serif;
+        }
 
-      <section class="controls" aria-label="Controles do relatório">
-        <div class="controls-filters" style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; align-items:end;">
-          <label class="control-item">
-            <div class="control-label">Data</div>
-            <input type="date" id="date" />
-          </label>
+        /* Estilização extra caso queira customizar o botão MUI */
+        .btn-container {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
 
-          <label class="control-item">
-            <div class="control-label">Jogador</div>
-            <select id="playerFilter">
-              <option value="">(todos)</option>
-            </select>
-          </label>
-
-          <label class="control-item">
-            <div class="control-label">Jogo</div>
-            <select id="gameFilter">
-              <option value="">(todos)</option>
-            </select>
-          </label>
-        </div>
-
-        <div class="controls-actions" style="margin-top:12px; display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
-          <button class="btn" onclick="loadReport()">📊 Carregar</button>
-          <button class="btn secondary" onclick="setTodayInputs()">📅 Hoje</button>
-          <button class="btn secondary" onclick="exportCSV()">📄 Exportar CSV</button>
-          <button class="btn secondary" onclick="printReport()">🖨️ Imprimir</button>
-          <button class="btn warning" onclick="forceRefreshData()">🔄 Forçar atualizar dados</button>
-          <button class="btn" id="clearFilters" onclick="(function(){document.getElementById('playerFilter').value=''; document.getElementById('gameFilter').value='';})()">✖ Limpar filtros</button>
-        </div>
-
-        <div class="controls-help" style="margin-top:8px; font-size:0.9rem; color:var(--md-sys-color-on-surface-variant);">
-          Dica: selecione uma data e use os filtros de <strong>Jogador</strong> e <strong>Jogo</strong> para enxergar apenas o que interessa.
-        </div>
-      </section>
-
-      <main id="reportArea" class="card">
-        <p>Selecione uma data para visualizar o relatório.</p>
-      </main>
+    <div class="btn-container" id="root">
+        <!-- O botão MUI será renderizado aqui ou via HTML direto com classes MUI -->
+        <button type="button" 
+                style="
+                    background-color: #1a73e8; 
+                    color: white; 
+                    padding: 10px 24px; 
+                    border: none; 
+                    border-radius: 4px; 
+                    font-weight: 500; 
+                    font-size: 0.875rem; 
+                    text-transform: uppercase; 
+                    cursor: pointer; 
+                    box-shadow: 0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12);
+                    transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1);
+                "
+                onmouseover="this.style.backgroundColor='#1765cc'"
+                onmouseout="this.style.backgroundColor='#1a73e8'">
+            GO FOR KEY!
+        </button>
     </div>
 
-    <!-- Scripts -->
-    <script src="scripts/main.js"></script>
-    <script src="components/theme.js"></script>
-    <script src="components/report.js"></script>
-  </body>
+    <!-- Script Linkvertise -->
+    <script src="https://publisher.linkvertise.com/cdn/linkvertise.js"></script>
+    <script>
+        linkvertise(5382507, {whitelist: [], blacklist: [""]});
+    </script>
+
+</body>
 </html>
