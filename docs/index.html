@@ -3,57 +3,113 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Go For Key</title>
-    <!-- Fonts para o MUI -->
+    <title>Go For Key | Access</title>
     <link rel="stylesheet" href="https://googleapis.com" />
-    <!-- MUI CSS (Emotion & Styled Engine) -->
-    <script src="https://unpkg.com"></script>
     
     <style>
-        body {
+        * {
             margin: 0;
             padding: 0;
-            /* Cor de fundo cinza similar ao Chrome */
-            background-color: #f1f3f4; 
+            box-sizing: border-box;
+        }
+
+        body {
             height: 100vh;
             display: flex;
             justify-content: center;
             align-items: center;
+            /* Fundo moderno com gradiente animado */
+            background: radial-gradient(circle at top left, #1e1e1e, #121212);
             font-family: 'Roboto', sans-serif;
+            overflow: hidden;
         }
 
-        /* Estilização extra caso queira customizar o botão MUI */
-        .btn-container {
-            text-align: center;
+        /* Luz de fundo decorativa */
+        .glow-bg {
+            position: absolute;
+            width: 300px;
+            height: 300px;
+            background: #1a73e8;
+            filter: blur(120px);
+            border-radius: 50%;
+            opacity: 0.2;
+            z-index: 0;
+        }
+
+        .glass-card {
+            z-index: 1;
+            /* Efeito Glassmorphism */
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 20px;
+            padding: 50px 80px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.8);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .mui-btn {
+            background-color: #1a73e8;
+            color: white;
+            padding: 16px 40px;
+            border: none;
+            border-radius: 12px;
+            font-weight: 700;
+            font-size: 1.1rem;
+            letter-spacing: 1.5px;
+            text-transform: uppercase;
+            cursor: pointer;
+            outline: none;
+            /* Efeito de luz no botão (glow) */
+            box-shadow: 0 0 15px rgba(26, 115, 232, 0.4);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .mui-btn:hover {
+            background-color: #4285f4;
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(26, 115, 232, 0.6);
+        }
+
+        .mui-btn:active {
+            transform: translateY(0);
+        }
+
+        /* Brilho interno que passa pelo botão */
+        .mui-btn::after {
+            content: "";
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: linear-gradient(45deg, transparent, rgba(255,255,255,0.1), transparent);
+            transform: rotate(45deg);
+            transition: 0.5s;
+        }
+
+        .mui-btn:hover::after {
+            left: 100%;
         }
     </style>
 </head>
 <body>
 
-    <div class="btn-container" id="root">
-        <!-- O botão MUI será renderizado aqui ou via HTML direto com classes MUI -->
-        <button type="button" 
-                style="
-                    background-color: #1a73e8; 
-                    color: white; 
-                    padding: 10px 24px; 
-                    border: none; 
-                    border-radius: 4px; 
-                    font-weight: 500; 
-                    font-size: 0.875rem; 
-                    text-transform: uppercase; 
-                    cursor: pointer; 
-                    box-shadow: 0px 3px 1px -2px rgba(0,0,0,0.2), 0px 2px 2px 0px rgba(0,0,0,0.14), 0px 1px 5px 0px rgba(0,0,0,0.12);
-                    transition: background-color 250ms cubic-bezier(0.4, 0, 0.2, 1);
-                "
-                onmouseover="this.style.backgroundColor='#1765cc'"
-                onmouseout="this.style.backgroundColor='#1a73e8'">
+    <div class="glow-bg"></div>
+
+    <div class="glass-card">
+        <button class="mui-btn" onclick="window.location.href='https://link-hub.net/5382507/4B2aB1zIjmh1'">
             GO FOR KEY!
         </button>
     </div>
 
     <!-- Script Linkvertise -->
-    <script src="https://publisher.linkvertise.com/cdn/linkvertise.js"></script>
+    <script src="https://linkvertise.com"></script>
     <script>
         linkvertise(5382507, {whitelist: [], blacklist: [""]});
     </script>
