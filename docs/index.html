@@ -3,14 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Linkvertise Script -->
     <script src="https://publisher.linkvertise.com/cdn/linkvertise.js"></script>
     <script>
-      linkvertise(5382507, {
-        blacklist: ["discord.com"], // O anúncio SÓ aparece para links do Discord
-        whitelist: [] 
-      });
+        linkvertise(5382507, { blacklist: ["discord.gg", "discord.com"], whitelist: [] });
     </script>
+
     <title>Nexus Fruits Hub | Oficial</title>
+    
     <style>
         :root {
             --blue-glow: #00a2ff;
@@ -18,10 +19,8 @@
             --glass-bg: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.1);
         }
-
         body {
-            margin: 0;
-            padding: 0;
+            margin: 0; padding: 0;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             background-color: var(--bg-dark);
             color: white;
@@ -30,116 +29,136 @@
             align-items: center;
             overflow-x: hidden;
         }
-
-        /* Efeito de Brilho no Fundo */
         .glow-bg {
-            position: fixed;
-            top: 50%;
-            left: 50%;
+            position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
-            width: 600px;
-            height: 600px;
+            width: 600px; height: 600px;
             background: radial-gradient(circle, rgba(0, 162, 255, 0.15) 0%, rgba(0,0,0,0) 70%);
-            z-index: -1;
-            filter: blur(80px);
+            z-index: -1; filter: blur(80px);
         }
-
-        .container {
-            max-width: 1000px;
-            padding: 40px 20px;
-            text-align: center;
-        }
-
-        h1 {
-            font-size: 3rem;
-            text-shadow: 0 0 20px var(--blue-glow);
-            margin-bottom: 10px;
-        }
-
-        p.subtitle {
-            color: #ccc;
-            margin-bottom: 40px;
-        }
-
-        /* Layout em Cards */
-        .main-content {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 20px;
-            justify-content: center;
-        }
-
+        .container { max-width: 1000px; padding: 40px 20px; text-align: center; }
+        h1 { font-size: 3rem; text-shadow: 0 0 20px var(--blue-glow); margin-bottom: 10px; }
+        p.subtitle { color: #ccc; margin-bottom: 40px; }
+        .main-content { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
         .glass-card {
             background: var(--glass-bg);
             backdrop-filter: blur(15px);
             -webkit-backdrop-filter: blur(15px);
             border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 30px;
-            flex: 1;
-            min-width: 300px;
+            border-radius: 20px; padding: 30px;
+            flex: 1; min-width: 300px;
             box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
             transition: transform 0.3s ease;
         }
-
-        .glass-card:hover {
-            transform: translateY(-5px);
-            border-color: var(--blue-glow);
-        }
-
-        .glass-card h2 {
-            color: var(--blue-glow);
-            margin-top: 0;
-        }
-
+        .glass-card:hover { transform: translateY(-5px); border-color: var(--blue-glow); }
+        .glass-card h2 { color: var(--blue-glow); margin-top: 0; }
         .status-badge {
-            background: rgba(0, 255, 127, 0.2);
-            color: #00ff7f;
-            padding: 5px 15px;
-            border-radius: 50px;
-            font-size: 0.8rem;
-            border: 1px solid #00ff7f;
-            display: inline-block;
-            margin-bottom: 15px;
+            background: rgba(0, 255, 127, 0.2); color: #00ff7f;
+            padding: 5px 15px; border-radius: 50px; font-size: 0.8rem;
+            border: 1px solid #00ff7f; display: inline-block; margin-bottom: 15px;
         }
-
-        /* Estilo do Botão */
         .mui-btn {
-            background: var(--blue-glow);
-            color: white;
-            border: none;
-            padding: 15px 30px;
-            border-radius: 10px;
-            font-weight: bold;
-            cursor: pointer;
-            text-transform: uppercase;
+            background: var(--blue-glow); color: white; border: none;
+            padding: 15px 30px; border-radius: 10px; font-weight: bold;
+            cursor: pointer; text-transform: uppercase;
             box-shadow: 0 0 15px rgba(0, 162, 255, 0.4);
+            margin-top: 20px; text-decoration: none; display: inline-block;
+        }
+        .mui-btn:hover { filter: brightness(1.2); }
+
+        /* Estilo do Tradutor */
+        #google_translate_element {
             margin-top: 20px;
+            background: var(--glass-bg);
+            padding: 5px;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
         }
-
-        .mui-btn:hover {
-            filter: brightness(1.2);
-        }
-
-        iframe {
-            border-radius: 15px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-        }
+        .goog-te-banner-frame.skiptranslate { display: none !important; }
+        body { top: 0px !important; }
     </style>
+
+    <!-- Script do Google Translate -->
+<script type="text/javascript">
+    function googleTranslateElementInit() {
+        new google.translate.TranslateElement({
+            pageLanguage: 'pt',
+            layout: google.translate.TranslateElement.InlineLayout.SIMPLE,
+            autoDisplay: false
+        }, 'google_translate_element');
+    }
+
+    // Função para forçar a troca de idioma ao clicar na bandeira
+    function changeLanguage(langCode) {
+        var select = document.querySelector('.goog-te-combo');
+        if (select) {
+            select.value = langCode;
+            select.dispatchEvent(new Event('change'));
+        }
+    }
+</script>
+<script type="text/javascript" src="//://google.com"></script>
+
+<style>
+    /* Esconde o seletor original feio do Google */
+    #google_translate_element { display: none; }
+    .goog-te-banner-frame.skiptranslate { display: none !important; }
+    body { top: 0px !important; }
+
+    /* Estilo das Bandeiras */
+    .language-picker {
+        margin-top: 20px;
+        display: flex;
+        gap: 15px;
+        justify-content: center;
+        background: var(--glass-bg);
+        padding: 10px 20px;
+        border-radius: 50px;
+        border: 1px solid var(--glass-border);
+        backdrop-filter: blur(10px);
+    }
+    .flag-btn {
+        cursor: pointer;
+        transition: transform 0.2s;
+        width: 30px;
+        height: 20px;
+        object-fit: cover;
+        border-radius: 3px;
+        border: 1px solid rgba(255,255,255,0.2);
+    }
+    .flag-btn:hover {
+        transform: scale(1.3);
+        border-color: var(--blue-glow);
+    }
+</style>
 </head>
+
 <body>
     <div class="glow-bg"></div>
+    
+    <!-- Seletor Invisível (Obrigatório para o script funcionar) -->
+    <div id="google_translate_element"></div>
+    
+    <!-- Suas Bandeiras Personalizadas -->
+    <div class="language-picker">
+        <img src="https://flagcdn.com" class="flag-btn" onclick="changeLanguage('pt')" title="Português">
+        <img src="https://flagcdn.com" class="flag-btn" onclick="changeLanguage('en')" title="English">
+        <img src="https://flagcdn.com" class="flag-btn" onclick="changeLanguage('es')" title="Español">
+        <img src="https://flagcdn.com" class="flag-btn" onclick="changeLanguage('ru')" title="Русский">
+        <img src="https://flagcdn.com" class="flag-btn" onclick="changeLanguage('hi')" title="Hindi">
+        <img src="https://flagcdn.com" class="flag-btn" onclick="changeLanguage('zh-CN')" title="Chinese">
+    </div>
 
     <div class="container">
         <h1>NEXUS FRUITS HUB</h1>
         <p class="subtitle">A tecnologia que você precisava para dominar o jogo.</p>
 
         <div class="main-content">
-            <!-- Card sobre o Auto Farm -->
+            <!-- Card Script -->
             <div class="glass-card">
                 <div class="status-badge">INDETECTÁVEL HÁ 3 MESES+</div>
                 <h2>Script Seguro</h2>
-                <p>Nosso <b>NexusFruitsHub</b> foi desenvolvido com foco total em segurança. Utilizamos bypasses avançados para garantir um auto farm eficiente sem riscos para sua conta.</p>
+                <p>Nosso <b>NexusFruitsHub</b> foi desenvolvido com foco total em segurança.</p>
                 <ul style="text-align: left; line-height: 1.8;">
                     <li>🔥 Auto Farm Level Ultra Rápido</li>
                     <li>🛡️ Proteção Anti-Ban Ativa</li>
@@ -147,26 +166,22 @@
                 </ul>
             </div>
 
-          <div class="glass-card">
-              <h2>Nossa Comunidade</h2>
-              <p>Junte-se a milhares de jogadores, receba atualizações em tempo real e suporte dedicado.</p>
-              
-              <!-- No lugar do iframe, usamos um visual que lembra o widget -->
-              <div style="background: #232428; padding: 20px; border-radius: 15px; margin-top: 20px; border: 1px solid #313338;">
-                  <img src="https://website-files.com" width="120" alt="Discord Logo" style="margin-bottom: 10px;">
-                  <p style="font-size: 0.9rem; color: #b5bac1;">Nexus Fruits Community</p>
-                  
-                  <!-- ESTE BOTÃO VAI ATIVAR O ANÚNCIO -->
-                  <a href="https://discord.gg/R6kXnrZ3qn" class="mui-btn" style="text-decoration: none; display: block; width: 80%; margin: 15px auto 0; background-color: #5865F2; box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);">
-                      ENTRAR NO SERVIDOR
-                  </a>
-              </div>
-          </div>
+            <!-- Card Discord CORRIGIDO -->
+            <div class="glass-card">
+                <h2>Nossa Comunidade</h2>
+                <p>Junte-se a milhares de jogadores e suporte dedicado.</p>
+                <div style="background: #232428; padding: 20px; border-radius: 15px; margin-top: 20px; border: 1px solid #313338;">
+                    <!-- Logo corrigida -->
+                    <img src="https://website-files.com" width="120" alt="Discord Logo" style="margin-bottom: 10px;">
+                    <p style="font-size: 0.9rem; color: #b5bac1;">Nexus Fruits Community</p>
+                    <a href="https://discord.gg/R6kXnrZ3qn" class="mui-btn" style="display: block; width: 80%; margin: 15px auto 0; background-color: #5865F2; box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);">
+                        ENTRAR NO SERVIDOR
+                    </a>
+                </div>
+            </div>
         </div>
 
-        <button class="mui-btn" onclick="window.location.href='#'">
-            OBTER SCRIPT AGORA
-        </button>
+        <a href="URL_DO_SEU_SCRIPT_AQUI" class="mui-btn">OBTER SCRIPT AGORA</a>
     </div>
 </body>
 </html>
