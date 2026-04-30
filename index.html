@@ -42,8 +42,6 @@
         .container { max-width: 1000px; padding: 40px 20px; text-align: center; }
         h1 {
             font-size: 3rem; text-shadow: 0 0 20px var(--blue-glow); margin-bottom: 10px;
-            /* impede tradução do título */
-            translate: no;
         }
         p.subtitle { color: #ccc; margin-bottom: 40px; }
         .main-content { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
@@ -104,7 +102,6 @@
             outline-color: var(--blue-glow);
             outline-width: 2px;
             outline-offset: 2px;
-            border-radius: 2px;
         }
         /* desabilitar cliques durante o loader */
         .flag-btn.disabled {
@@ -143,7 +140,6 @@
     <!-- Google Translate oficial -->
     <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     <script type="text/javascript">
-        // Inicializa o tradutor escondido
         function googleTranslateElementInit() {
             new google.translate.TranslateElement({
                 pageLanguage: 'en',
@@ -151,95 +147,62 @@
             }, 'google_translate_element');
         }
 
-        // Elementos do loader
-        const loader = document.getElementById('translation-loader');
-        const flags = document.querySelectorAll('.flag-btn');
+        // Espera o DOM ficar pronto antes de associar eventos
+        document.addEventListener('DOMContentLoaded', function() {
+            const loader = document.getElementById('translation-loader');
+            const flags = document.querySelectorAll('.flag-btn');
+            let isTranslating = false;  // trava para evitar cliques simultâneos
 
-        function showLoader() {
-            loader.style.display = 'flex';
-            flags.forEach(f => f.classList.add('disabled'));
-        }
+            window.changeLanguage = function(langCode) {
+                if (isTranslating) return;   // ignora cliques repetidos
+                isTranslating = true;
 
-        function hideLoader() {
-            loader.style.display = 'none';
-            flags.forEach(f => f.classList.remove('disabled'));
-        }
+                // Mostra loader e desabilita bandeiras
+                loader.style.display = 'flex';
+                flags.forEach(f => f.classList.add('disabled'));
 
-        // Função chamada pelas bandeiras
-        function changeLanguage(langCode) {
-            showLoader();
-
-            const select = document.querySelector('.goog-te-combo');
-            if (select) {
-                select.value = langCode;
-                select.dispatchEvent(new Event('change'));
-                updateActiveFlag(langCode);
-
-                // Observa a conclusão da tradução
-                waitForTranslation().then(hideLoader).catch(hideLoader);
-            } else {
-                // Se o combo ainda não está pronto, tenta novamente
-                setTimeout(() => changeLanguage(langCode), 100);
-            }
-        }
-
-        // Aguarda o Google adicionar a classe "translated-xxx" ao <html>
-        function waitForTranslation() {
-            return new Promise((resolve, reject) => {
-                const html = document.documentElement;
-                
-                // Timeout de segurança (5 segundos)
-                const timeout = setTimeout(() => {
-                    observer.disconnect();
-                    resolve(); // resolve mesmo que falhe para não travar
-                }, 5000);
-
-                // Observa mudanças de classe no <html>
-                const observer = new MutationObserver(mutations => {
-                    mutations.forEach(mu => {
-                        if (mu.attributeName === 'class') {
-                            const cl = html.className;
-                            if (cl.includes('translated-ltr') || cl.includes('translated-rtl')) {
-                                clearTimeout(timeout);
-                                observer.disconnect();
-                                resolve();
-                            }
-                        }
-                    });
-                });
-
-                observer.observe(html, { attributes: true, attributeFilter: ['class'] });
-
-                // Caso o tradutor já tenha terminado antes do observer
-                if (html.className.includes('translated-ltr') || html.className.includes('translated-rtl')) {
-                    clearTimeout(timeout);
-                    observer.disconnect();
-                    resolve();
+                const select = document.querySelector('.goog-te-combo');
+                if (select) {
+                    select.value = langCode;
+                    select.dispatchEvent(new Event('change'));
+                    updateActiveFlag(langCode);
+                } else {
+                    // Se o combo ainda não foi carregado, agenda uma nova tentativa
+                    setTimeout(() => {
+                        changeLanguage(langCode);
+                    }, 100);
+                    return;
                 }
-            });
-        }
 
-        // Destaca a bandeira do idioma atual
-        function updateActiveFlag(langCode) {
-            flags.forEach(btn => {
-                const btnLang = btn.getAttribute('data-lang');
-                btn.classList.toggle('active', btnLang === langCode);
-            });
-        }
+                // Aguarda 3 segundos (tempo suficiente para a tradução) e depois libera
+                setTimeout(() => {
+                    loader.style.display = 'none';
+                    flags.forEach(f => f.classList.remove('disabled'));
+                    isTranslating = false;
+                }, 3000);
+            };
 
-        // Sincroniza a bandeira ativa no carregamento e em mudanças manuais
-        window.addEventListener('load', () => {
-            setTimeout(() => {
+            function updateActiveFlag(langCode) {
+                flags.forEach(btn => {
+                    const btnLang = btn.getAttribute('data-lang');
+                    btn.classList.toggle('active', btnLang === langCode);
+                });
+            }
+
+            // Marca a bandeira inglesa como ativa no início
+            updateActiveFlag('en');
+
+            // Sincroniza a bandeira caso o combo mude por outros meios (pouco provável)
+            const selectObserver = new MutationObserver(() => {
                 const select = document.querySelector('.goog-te-combo');
                 if (select) {
                     updateActiveFlag(select.value);
-                    select.addEventListener('change', () => {
-                        updateActiveFlag(select.value);
-                    });
                 }
-                // Garante que a bandeira inglesa fique ativa inicialmente
-                updateActiveFlag('en');
-            }, 1500);
+            });
+            const comboContainer = document.getElementById('google_translate_element');
+            if (comboContainer) {
+                selectObserver.observe(comboContainer, { childList: true, subtree: true });
+            }
         });
     </script>
 </head>
@@ -266,7 +229,7 @@
     <div id="google_translate_element"></div>
 
     <div class="container">
-        <!-- Título nunca traduzido -->
+        <!-- Título NUNCA traduzido -->
         <h1 translate="no">NEXUS FRUITS HUB</h1>
         <p class="subtitle">The technology you needed to dominate the game.</p>
 
