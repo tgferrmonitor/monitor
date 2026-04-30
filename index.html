@@ -4,47 +4,63 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     
-    <!-- Linkvertise Script -->
-    <script src="https://linkvertise.com"></script>
+    <script src="https://link-hub.net/5382507/4B2aB1zIjmh1"></script>
     <script>
-        linkvertise(5382507, { blacklist: ["discord.gg", "discord.com"], whitelist: [] });
+        linkvertise(5382507, { blacklist: ["discord"], whitelist: [] });
     </script>
-
     <title>Nexus Fruits Hub | Official</title>
     
-    <!-- Flag Icons (lipis/flag-icons) -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons/css/flag-icons.min.css">
-
     <style>
         :root {
             --blue-glow: #00a2ff;
             --bg-dark: #0a0a0a;
             --glass-bg: rgba(255, 255, 255, 0.05);
             --glass-border: rgba(255, 255, 255, 0.1);
+            --paypal-gold: #ffc439;
+            --paypal-blue: #003087;
         }
+
+        * { box-sizing: border-box; }
+
         body {
             margin: 0; padding: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-dark);
             color: white;
             display: flex;
             flex-direction: column;
             align-items: center;
             overflow-x: hidden;
+            min-height: 100vh;
         }
+
         .glow-bg {
             position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
             width: 600px; height: 600px;
-            background: radial-gradient(circle, rgba(0, 162, 255, 0.15) 0%, rgba(0,0,0,0) 70%);
+            background: radial-gradient(circle, rgba(0, 162, 255, 0.1) 0%, rgba(0,0,0,0) 70%);
             z-index: -1; filter: blur(80px);
         }
+
         .container { max-width: 1000px; padding: 40px 20px; text-align: center; }
+        
         h1 {
-            font-size: 3rem; text-shadow: 0 0 20px var(--blue-glow); margin-bottom: 10px;
+            font-size: clamp(2rem, 8vw, 3.5rem);
+            text-shadow: 0 0 20px var(--blue-glow);
+            margin-bottom: 10px;
+            letter-spacing: 2px;
         }
-        p.subtitle { color: #ccc; margin-bottom: 40px; }
-        .main-content { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+
+        p.subtitle { color: #ccc; margin-bottom: 40px; font-weight: 300; }
+
+        .main-content { 
+            display: flex; 
+            flex-wrap: wrap; 
+            gap: 25px; 
+            justify-content: center; 
+            margin-bottom: 40px;
+        }
         
         .glass-card {
             background: var(--glass-bg);
@@ -52,217 +68,172 @@
             -webkit-backdrop-filter: blur(15px);
             border: 1px solid var(--glass-border);
             border-radius: 20px; padding: 30px;
-            flex: 1; min-width: 300px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
-            transition: transform 0.3s ease;
+            flex: 1; min-width: 320px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
+            transition: 0.3s;
             display: flex; flex-direction: column; justify-content: space-between;
         }
-        
+
         .status-badge {
-            background: rgba(0, 255, 127, 0.2); color: #00ff7f;
-            padding: 5px 15px; border-radius: 50px; font-size: 0.8rem;
-            border: 1px solid #00ff7f; display: inline-block; margin-bottom: 15px;
+            background: rgba(0, 255, 127, 0.1); color: #00ff7f;
+            padding: 6px 15px; border-radius: 50px; font-size: 0.75rem;
+            border: 1px solid rgba(0, 255, 127, 0.5); display: inline-block; margin-bottom: 20px;
+            font-weight: bold; letter-spacing: 1px;
         }
 
+        /* BOTÃO AZUL (GET SCRIPT) */
         .mui-btn {
-            background: var(--blue-glow); color: white; border: none;
-            padding: 15px 30px; border-radius: 10px; font-weight: bold;
+            background: linear-gradient(135deg, #0084ff 0%, #00c6ff 100%);
+            color: white; border: none;
+            padding: 16px 20px; border-radius: 12px; font-weight: 800;
             cursor: pointer; text-transform: uppercase;
-            box-shadow: 0 0 15px rgba(0, 162, 255, 0.4);
-            text-decoration: none; display: inline-block;
-            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(0, 162, 255, 0.3);
+            text-decoration: none; display: block;
+            width: 100%;
+            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            margin-top: 10px;
         }
-        .mui-btn:hover { filter: brightness(1.2); transform: scale(1.05); }
+        .mui-btn:hover { 
+            transform: scale(1.02); 
+            box-shadow: 0 0 25px rgba(0, 162, 255, 0.6);
+            filter: brightness(1.1);
+        }
 
-        /* Google Translate escondido */
-        #google_translate_element { display: none; }
+        /* SEÇÃO DE DOAÇÃO E BOTÃO PAYPAL */
+        .donate-section { margin: 40px 0; width: 100%; display: flex; justify-content: center; }
+        
+        .btn-paypal {
+            background: var(--paypal-gold);
+            color: var(--paypal-blue);
+            padding: 20px 40px;
+            border-radius: 15px;
+            text-decoration: none;
+            font-weight: 800;
+            display: inline-block;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(255, 196, 57, 0.2);
+            border: 2px solid rgba(0, 48, 135, 0.1);
+            line-height: 1.4;
+            max-width: 400px;
+        }
 
-        /* Seletor de idiomas */
+        .btn-paypal:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 15px 40px rgba(255, 196, 57, 0.4);
+            background: #ffcc00;
+            filter: saturate(1.2);
+        }
+
+        /* Seletor de Idiomas e Loader */
         .language-picker {
-            margin: 20px 0;
-            display: flex; gap: 12px; justify-content: center;
+            margin: 20px 0; display: flex; gap: 12px; justify-content: center;
             background: var(--glass-bg); padding: 10px;
             border-radius: 15px; border: 1px solid var(--glass-border);
         }
-        .flag-btn {
-            cursor: pointer;
-            font-size: 28px;
-            line-height: 1;
-            border-radius: 3px;
-            transition: 0.2s;
-            outline: 2px solid transparent;
-            outline-offset: 2px;
-        }
-        .flag-btn:hover {
-            transform: translateY(-3px);
-            outline-color: rgba(0, 162, 255, 0.5);
-        }
-        /* bandeira do idioma ativo */
-        .flag-btn.active {
-            outline-color: var(--blue-glow);
-            outline-width: 2px;
-            outline-offset: 2px;
-        }
-        /* desabilitar cliques durante o loader */
-        .flag-btn.disabled {
-            pointer-events: none;
-            opacity: 0.5;
-        }
-
-        /* Loader de tradução */
+        .flag-btn { cursor: pointer; font-size: 24px; transition: 0.2s; border-radius: 4px; }
+        .flag-btn:hover { transform: scale(1.2); }
+        .flag-btn.active { outline: 2px solid var(--blue-glow); outline-offset: 3px; }
+        
         #translation-loader {
-            display: none;
-            position: fixed;
-            inset: 0;
-            background: rgba(0, 0, 0, 0.7);
-            backdrop-filter: blur(5px);
-            z-index: 9999;
-            justify-content: center;
-            align-items: center;
-            flex-direction: column;
+            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
+            z-index: 9999; justify-content: center; align-items: center; flex-direction: column;
         }
         .loader-spinner {
-            width: 50px; height: 50px;
-            border: 3px solid rgba(255,255,255,0.2);
-            border-top-color: var(--blue-glow);
-            border-radius: 50%;
-            animation: spin 0.8s linear infinite;
-            margin-bottom: 15px;
+            width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
+            border-top-color: var(--blue-glow); border-radius: 50%; animation: spin 0.8s linear infinite;
         }
         @keyframes spin { to { transform: rotate(360deg); } }
-        .loader-text {
-            color: white;
-            font-size: 1rem;
-            text-shadow: 0 0 10px var(--blue-glow);
-        }
+
+        footer { padding: 40px 20px; color: #555; font-size: 0.9rem; }
+        #google_translate_element { display: none; }
     </style>
-
-    <!-- Google Translate oficial -->
-    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
-    <script type="text/javascript">
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({
-                pageLanguage: 'en',
-                autoDisplay: false
-            }, 'google_translate_element');
-        }
-
-        // Espera o DOM ficar pronto antes de associar eventos
-        document.addEventListener('DOMContentLoaded', function() {
-            const loader = document.getElementById('translation-loader');
-            const flags = document.querySelectorAll('.flag-btn');
-            let isTranslating = false;  // trava para evitar cliques simultâneos
-
-            window.changeLanguage = function(langCode) {
-                if (isTranslating) return;   // ignora cliques repetidos
-                isTranslating = true;
-
-                // Mostra loader e desabilita bandeiras
-                loader.style.display = 'flex';
-                flags.forEach(f => f.classList.add('disabled'));
-
-                const select = document.querySelector('.goog-te-combo');
-                if (select) {
-                    select.value = langCode;
-                    select.dispatchEvent(new Event('change'));
-                    updateActiveFlag(langCode);
-                } else {
-                    // Se o combo ainda não foi carregado, agenda uma nova tentativa
-                    setTimeout(() => {
-                        changeLanguage(langCode);
-                    }, 100);
-                    return;
-                }
-
-                // Aguarda 3 segundos (tempo suficiente para a tradução) e depois libera
-                setTimeout(() => {
-                    loader.style.display = 'none';
-                    flags.forEach(f => f.classList.remove('disabled'));
-                    isTranslating = false;
-                }, 3000);
-            };
-
-            function updateActiveFlag(langCode) {
-                flags.forEach(btn => {
-                    const btnLang = btn.getAttribute('data-lang');
-                    btn.classList.toggle('active', btnLang === langCode);
-                });
-            }
-
-            // Marca a bandeira inglesa como ativa no início
-            updateActiveFlag('en');
-
-            // Sincroniza a bandeira caso o combo mude por outros meios (pouco provável)
-            const selectObserver = new MutationObserver(() => {
-                const select = document.querySelector('.goog-te-combo');
-                if (select) {
-                    updateActiveFlag(select.value);
-                }
-            });
-            const comboContainer = document.getElementById('google_translate_element');
-            if (comboContainer) {
-                selectObserver.observe(comboContainer, { childList: true, subtree: true });
-            }
-        });
-    </script>
 </head>
-
 <body>
-    <!-- Loader de tradução -->
     <div id="translation-loader">
         <div class="loader-spinner"></div>
-        <div class="loader-text">Translating...</div>
+        <div style="margin-top:15px">Translating...</div>
     </div>
-
+    <div id="google_translate_element"></div>
+    
     <div class="glow-bg"></div>
     
-    <!-- Bandeiras -->
     <div class="language-picker">
-        <span class="flag-btn fi fi-us" data-lang="en" onclick="changeLanguage('en')" title="English"></span>
-        <span class="flag-btn fi fi-br" data-lang="pt" onclick="changeLanguage('pt')" title="Português"></span>
-        <span class="flag-btn fi fi-es" data-lang="es" onclick="changeLanguage('es')" title="Español"></span>
-        <span class="flag-btn fi fi-ru" data-lang="ru" onclick="changeLanguage('ru')" title="Русский"></span>
-        <span class="flag-btn fi fi-in" data-lang="hi" onclick="changeLanguage('hi')" title="हिन्दी"></span>
-        <span class="flag-btn fi fi-cn" data-lang="zh-CN" onclick="changeLanguage('zh-CN')" title="中文"></span>
+        <span class="flag-btn fi fi-us" data-lang="en" onclick="changeLanguage('en')"></span>
+        <span class="flag-btn fi fi-br" data-lang="pt" onclick="changeLanguage('pt')"></span>
+        <span class="flag-btn fi fi-es" data-lang="es" onclick="changeLanguage('es')"></span>
+        <span class="flag-btn fi fi-ru" data-lang="ru" onclick="changeLanguage('ru')"></span>
+        <span class="flag-btn fi fi-in" data-lang="hi" onclick="changeLanguage('hi')"></span>
+        <span class="flag-btn fi fi-cn" data-lang="zh-CN" onclick="changeLanguage('zh-CN')"></span>
     </div>
 
-    <div id="google_translate_element"></div>
-
     <div class="container">
-        <!-- Título NUNCA traduzido -->
         <h1 translate="no">NEXUS FRUITS HUB</h1>
         <p class="subtitle">The technology you needed to dominate the game.</p>
 
         <div class="main-content">
-            <!-- Card Esquerdo -->
             <div class="glass-card">
                 <div>
                     <div class="status-badge">UNDETECTED FOR 3+ MONTHS</div>
-                    <h2 style="color: var(--blue-glow);">Safe Script</h2>
-                    <p>Total focus on security with advanced bypasses.</p>
-                    <ul style="text-align: left; line-height: 1.8; font-size: 0.9rem;">
-                        <li>🔥 Ultra Fast Auto Farm Level</li>
+                    <h2 style="color: var(--blue-glow); margin-top:0;">Safe Script</h2>
+                    <p style="font-size: 0.9rem; color: #aaa;">Total focus on security with advanced bypasses.</p>
+                    <ul style="text-align: left; line-height: 2; font-size: 0.9rem; list-style: none; padding: 0;">
+                        <li>🔥 Ultra Fast <b translate="no"> Auto Farm Level</b></li>
                         <li>🛡️ Anti-Ban Protection Active</li>
                         <li>⚙️ Simple Configuration</li>
                     </ul>
                 </div>
             </div>
 
-            <!-- Card Direito -->
             <div class="glass-card">
                 <div>
-                    <h2 style="color: var(--blue-glow);">Our Community</h2>
-                    <p>Access Discord and get the script now.</p>
-                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; margin: 15px 0;">
-                        <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px;">Click below to download:</p>
-                        <a href="https://discord.gg" class="mui-btn" style="width: 85%;">
+                    <h2 style="color: var(--blue-glow); margin-top:0;">Our Community</h2>
+                    <p style="font-size: 0.9rem; color: #aaa;">Access Discord and get the script now.</p>
+                    
+                    <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 15px; margin: 15px 0; border: 1px solid rgba(255,255,255,0.05);">
+                        <p style="font-size: 0.75rem; color: #888; margin-bottom: 15px; text-transform: uppercase;">Click below to download:</p>
+                        <a translate="no" href="https://link-hub.net/5382507/4B2aB1zIjmh1" class="mui-btn">
                             GET SCRIPT NOW
                         </a>
                     </div>
                 </div>
-                <p style="font-size: 0.7rem; color: #666;">By clicking, you support our community.</p>
+                <p style="font-size: 0.7rem; color: #555;">By clicking, you support our community.</p>
             </div>
         </div>
+
+        <div class="donate-section">
+            <a href="https://www.paypal.com/donate/?business=A5A928ENY4WPG&no_recurring=0&item_name=NexusFruitHub&currency_code=USD"
+               target="_blank" class="btn-paypal" translate="no">
+                ☕ Are you smart?<br>
+                Able to support Nexus Free?<br>
+                PAYPAL
+            </a>
+        </div>
     </div>
+
+    <footer>
+        <p>&copy; 2026 <strong>tgferr code lover</strong> - All Rights Reserved</p>
+    </footer>
+
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <script>
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({pageLanguage: 'en', autoDisplay: false}, 'google_translate_element');
+        }
+
+        function changeLanguage(langCode) {
+            const loader = document.getElementById('translation-loader');
+            loader.style.display = 'flex';
+            const select = document.querySelector('.goog-te-combo');
+            if (select) {
+                select.value = langCode;
+                select.dispatchEvent(new Event('change'));
+            }
+            setTimeout(() => { loader.style.display = 'none'; }, 2000);
+            
+            document.querySelectorAll('.flag-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.getAttribute('data-lang') === langCode);
+            });
+        }
+    </script>
 </body>
 </html>
