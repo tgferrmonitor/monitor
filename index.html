@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
+    <!-- Linkvertise Script -->
+    <script src="https://linkvertise.com"></script>
+    <script>
+        linkvertise(5382507, { blacklist: ["discord.gg", "discord.com"], whitelist: [] });
+    </script>
+
+    <title>Nexus Fruits Hub | Official</title>
+    
+    <!-- Flag Icons (lipis/flag-icons) -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons/css/flag-icons.min.css">
+
+    <style>
+        :root {
+            --blue-glow: #00a2ff;
+            --bg-dark: #0a0a0a;
+            --glass-bg: rgba(255, 255, 255, 0.05);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+        body {
+            margin: 0; padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-dark);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            overflow-x: hidden;
+        }
+        .glow-bg {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(0, 162, 255, 0.15) 0%, rgba(0,0,0,0) 70%);
+            z-index: -1; filter: blur(80px);
+        }
+        .container { max-width: 1000px; padding: 40px 20px; text-align: center; }
+        h1 {
+            font-size: 3rem; text-shadow: 0 0 20px var(--blue-glow); margin-bottom: 10px;
+            /* impede tradução do título */
+            translate: no;
+        }
+        p.subtitle { color: #ccc; margin-bottom: 40px; }
+        .main-content { display: flex; flex-wrap: wrap; gap: 20px; justify-content: center; }
+        
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px; padding: 30px;
+            flex: 1; min-width: 300px;
+            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+            transition: transform 0.3s ease;
+            display: flex; flex-direction: column; justify-content: space-between;
+        }
+        
+        .status-badge {
+            background: rgba(0, 255, 127, 0.2); color: #00ff7f;
+            padding: 5px 15px; border-radius: 50px; font-size: 0.8rem;
+            border: 1px solid #00ff7f; display: inline-block; margin-bottom: 15px;
+        }
+
+        .mui-btn {
+            background: var(--blue-glow); color: white; border: none;
+            padding: 15px 30px; border-radius: 10px; font-weight: bold;
+            cursor: pointer; text-transform: uppercase;
+            box-shadow: 0 0 15px rgba(0, 162, 255, 0.4);
+            text-decoration: none; display: inline-block;
+            transition: 0.3s;
+        }
+        .mui-btn:hover { filter: brightness(1.2); transform: scale(1.05); }
+
+        /* Google Translate escondido */
+        #google_translate_element { display: none; }
+
+        /* Seletor de idiomas */
+        .language-picker {
+            margin: 20px 0;
+            display: flex; gap: 12px; justify-content: center;
+            background: var(--glass-bg); padding: 10px;
+            border-radius: 15px; border: 1px solid var(--glass-border);
+        }
+        .flag-btn {
+            cursor: pointer;
+            font-size: 28px;
+            line-height: 1;
+            border-radius: 3px;
+            transition: 0.2s;
+            outline: 2px solid transparent;
+            outline-offset: 2px;
+        }
+        .flag-btn:hover {
+            transform: translateY(-3px);
+            outline-color: rgba(0, 162, 255, 0.5);
+        }
+        /* bandeira do idioma ativo */
+        .flag-btn.active {
+            outline-color: var(--blue-glow);
+            outline-width: 2px;
+            outline-offset: 2px;
+            border-radius: 2px;
+        }
+        /* desabilitar cliques durante o loader */
+        .flag-btn.disabled {
+            pointer-events: none;
+            opacity: 0.5;
+        }
+
+        /* Loader de tradução */
+        #translation-loader {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+        .loader-spinner {
+            width: 50px; height: 50px;
+            border: 3px solid rgba(255,255,255,0.2);
+            border-top-color: var(--blue-glow);
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 15px;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader-text {
+            color: white;
+            font-size: 1rem;
+            text-shadow: 0 0 10px var(--blue-glow);
+        }
+    </style>
+
+    <!-- Google Translate oficial -->
+    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
+    <script type="text/javascript">
+        // Inicializa o tradutor escondido
+        function googleTranslateElementInit() {
+            new google.translate.TranslateElement({
+                pageLanguage: 'en',
+                autoDisplay: false
+            }, 'google_translate_element');
+        }
+
+        // Elementos do loader
+        const loader = document.getElementById('translation-loader');
+        const flags = document.querySelectorAll('.flag-btn');
+
+        function showLoader() {
+            loader.style.display = 'flex';
+            flags.forEach(f => f.classList.add('disabled'));
+        }
+
+        function hideLoader() {
+            loader.style.display = 'none';
+            flags.forEach(f => f.classList.remove('disabled'));
+        }
+
+        // Função chamada pelas bandeiras
+        function changeLanguage(langCode) {
+            showLoader();
+
+            const select = document.querySelector('.goog-te-combo');
+            if (select) {
+                select.value = langCode;
+                select.dispatchEvent(new Event('change'));
+                updateActiveFlag(langCode);
+
+                // Observa a conclusão da tradução
+                waitForTranslation().then(hideLoader).catch(hideLoader);
+            } else {
+                // Se o combo ainda não está pronto, tenta novamente
+                setTimeout(() => changeLanguage(langCode), 100);
+            }
+        }
+
+        // Aguarda o Google adicionar a classe "translated-xxx" ao <html>
+        function waitForTranslation() {
+            return new Promise((resolve, reject) => {
+                const html = document.documentElement;
+                
+                // Timeout de segurança (5 segundos)
+                const timeout = setTimeout(() => {
+                    observer.disconnect();
+                    resolve(); // resolve mesmo que falhe para não travar
+                }, 5000);
+
+                // Observa mudanças de classe no <html>
+                const observer = new MutationObserver(mutations => {
+                    mutations.forEach(mu => {
+                        if (mu.attributeName === 'class') {
+                            const cl = html.className;
+                            if (cl.includes('translated-ltr') || cl.includes('translated-rtl')) {
+                                clearTimeout(timeout);
+                                observer.disconnect();
+                                resolve();
+                            }
+                        }
+                    });
+                });
+
+                observer.observe(html, { attributes: true, attributeFilter: ['class'] });
+
+                // Caso o tradutor já tenha terminado antes do observer
+                if (html.className.includes('translated-ltr') || html.className.includes('translated-rtl')) {
+                    clearTimeout(timeout);
+                    observer.disconnect();
+                    resolve();
+                }
+            });
+        }
+
+        // Destaca a bandeira do idioma atual
+        function updateActiveFlag(langCode) {
+            flags.forEach(btn => {
+                const btnLang = btn.getAttribute('data-lang');
+                btn.classList.toggle('active', btnLang === langCode);
+            });
+        }
+
+        // Sincroniza a bandeira ativa no carregamento e em mudanças manuais
+        window.addEventListener('load', () => {
+            setTimeout(() => {
+                const select = document.querySelector('.goog-te-combo');
+                if (select) {
+                    updateActiveFlag(select.value);
+                    select.addEventListener('change', () => {
+                        updateActiveFlag(select.value);
+                    });
+                }
+                // Garante que a bandeira inglesa fique ativa inicialmente
+                updateActiveFlag('en');
+            }, 1500);
+        });
+    </script>
+</head>
+
+<body>
+    <!-- Loader de tradução -->
+    <div id="translation-loader">
+        <div class="loader-spinner"></div>
+        <div class="loader-text">Translating...</div>
+    </div>
+
+    <div class="glow-bg"></div>
+    
+    <!-- Bandeiras -->
+    <div class="language-picker">
+        <span class="flag-btn fi fi-us" data-lang="en" onclick="changeLanguage('en')" title="English"></span>
+        <span class="flag-btn fi fi-br" data-lang="pt" onclick="changeLanguage('pt')" title="Português"></span>
+        <span class="flag-btn fi fi-es" data-lang="es" onclick="changeLanguage('es')" title="Español"></span>
+        <span class="flag-btn fi fi-ru" data-lang="ru" onclick="changeLanguage('ru')" title="Русский"></span>
+        <span class="flag-btn fi fi-in" data-lang="hi" onclick="changeLanguage('hi')" title="हिन्दी"></span>
+        <span class="flag-btn fi fi-cn" data-lang="zh-CN" onclick="changeLanguage('zh-CN')" title="中文"></span>
+    </div>
+
+    <div id="google_translate_element"></div>
+
+    <div class="container">
+        <!-- Título nunca traduzido -->
+        <h1 translate="no">NEXUS FRUITS HUB</h1>
+        <p class="subtitle">The technology you needed to dominate the game.</p>
+
+        <div class="main-content">
+            <!-- Card Esquerdo -->
+            <div class="glass-card">
+                <div>
+                    <div class="status-badge">UNDETECTED FOR 3+ MONTHS</div>
+                    <h2 style="color: var(--blue-glow);">Safe Script</h2>
+                    <p>Total focus on security with advanced bypasses.</p>
+                    <ul style="text-align: left; line-height: 1.8; font-size: 0.9rem;">
+                        <li>🔥 Ultra Fast Auto Farm Level</li>
+                        <li>🛡️ Anti-Ban Protection Active</li>
+                        <li>⚙️ Simple Configuration</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- Card Direito -->
+            <div class="glass-card">
+                <div>
+                    <h2 style="color: var(--blue-glow);">Our Community</h2>
+                    <p>Access Discord and get the script now.</p>
+                    <div style="background: rgba(0,0,0,0.3); padding: 15px; border-radius: 12px; margin: 15px 0;">
+                        <p style="font-size: 0.8rem; color: #aaa; margin-bottom: 10px;">Click below to download:</p>
+                        <a href="https://discord.gg" class="mui-btn" style="width: 85%;">
+                            GET SCRIPT NOW
+                        </a>
+                    </div>
+                </div>
+                <p style="font-size: 0.7rem; color: #666;">By clicking, you support our community.</p>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
