@@ -3,7 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <script src="https://publisher.linkvertise.com/cdn/linkvertise.js"></script><script>linkvertise(5382507, {whitelist: ["discord.com","tgferr.com.br", "tgferrmonitor.github.io"], blacklist: []});</script>
+    <script src="https://publisher.linkvertise.com/cdn/linkvertise.js"></script>
+    <script>
+      linkvertise(5382507, {
+        blacklist: ["discord.com"], // O anúncio SÓ aparece para links do Discord
+        whitelist: [] 
+      });
+    </script>
     <title>Nexus Fruits Hub | Oficial</title>
     <style>
         :root {
@@ -141,12 +147,21 @@
                 </ul>
             </div>
 
-            <!-- Card sobre a Comunidade (Discord) -->
-            <div class="glass-card">
-                <h2>Nossa Comunidade</h2>
-                <p>Junte-se a milhares de jogadores, receba atualizações em tempo real e suporte dedicado.</p>
-                <iframe src="https://discord.com/widget?id=1481330882735505623&theme=dark" width="100%" height="300" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
-            </div>
+          <div class="glass-card">
+              <h2>Nossa Comunidade</h2>
+              <p>Junte-se a milhares de jogadores, receba atualizações em tempo real e suporte dedicado.</p>
+              
+              <!-- No lugar do iframe, usamos um visual que lembra o widget -->
+              <div style="background: #232428; padding: 20px; border-radius: 15px; margin-top: 20px; border: 1px solid #313338;">
+                  <img src="https://website-files.com" width="120" alt="Discord Logo" style="margin-bottom: 10px;">
+                  <p style="font-size: 0.9rem; color: #b5bac1;">Nexus Fruits Community</p>
+                  
+                  <!-- ESTE BOTÃO VAI ATIVAR O ANÚNCIO -->
+                  <a href="https://discord.gg/R6kXnrZ3qn" class="mui-btn" style="text-decoration: none; display: block; width: 80%; margin: 15px auto 0; background-color: #5865F2; box-shadow: 0 4px 15px rgba(88, 101, 242, 0.4);">
+                      ENTRAR NO SERVIDOR
+                  </a>
+              </div>
+          </div>
         </div>
 
         <button class="mui-btn" onclick="window.location.href='#'">
