@@ -82,7 +82,6 @@
             font-weight: bold; letter-spacing: 1px;
         }
 
-        /* BOTÃO AZUL (GET SCRIPT) - VISUAL NORMAL SEMPRE */
         .mui-btn {
             background: linear-gradient(135deg, #0084ff 0%, #00c6ff 100%);
             color: white; border: none;
@@ -101,7 +100,7 @@
             filter: brightness(1.1);
         }
 
-        /* ANÚNCIOS LATERAIS */
+        /* ANÚNCIOS LATERAIS (Native Banner) */
         .ad-lateral {
             position: fixed;
             top: 50%;
@@ -113,14 +112,33 @@
             justify-content: center;
             align-items: center;
         }
-        .ad-left { left: 20px; }
         .ad-right { right: 20px; }
 
         @media (max-width: 1350px) {
             .ad-lateral { display: none; }
         }
 
-        /* SEÇÃO DE DOAÇÃO E BOTÃO PAYPAL */
+        /* Bloco de anúncio 300x250 */
+        .ad-300x250 {
+            margin: 30px auto;
+            max-width: 300px;
+            background: var(--glass-bg);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid var(--glass-border);
+            border-radius: 20px;
+            padding: 15px;
+            box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5);
+            text-align: center;
+        }
+        .ad-label {
+            font-size: 0.65rem;
+            color: #777;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 10px;
+        }
+
         .donate-section { margin: 40px 0; width: 100%; display: flex; justify-content: center; }
 
         .btn-paypal {
@@ -145,7 +163,6 @@
             filter: saturate(1.2);
         }
 
-        /* Seletor de Idiomas e Loader */
         .language-picker {
             margin: 20px 0; display: flex; gap: 12px; justify-content: center;
             background: var(--glass-bg); padding: 10px;
@@ -171,6 +188,7 @@
     </style>
 </head>
 <body>
+    <!-- Native Banner lateral -->
     <div class="ad-lateral ad-right">
         <script async="async" data-cfasync="false" src="https://millionairelucidlytransmitted.com/b20af9fe0da19308e373edbfbac6eba1/invoke.js"></script>
         <div id="container-b20af9fe0da19308e373edbfbac6eba1"></div>
@@ -218,15 +236,28 @@
 
                     <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 15px; margin: 15px 0; border: 1px solid rgba(255,255,255,0.05);">
                         <p style="font-size: 0.75rem; color: #888; margin-bottom: 15px; text-transform: uppercase;">Click below to download:</p>
-                        
                         <a href="https://link-hub.net/5382507/4B2aB1zIjmh1" class="mui-btn" id="main-script-btn">
                             GET SCRIPT NOW
                         </a>
-
                     </div>
                 </div>
                 <p style="font-size: 0.7rem; color: #555;">By clicking, you support our community.</p>
             </div>
+        </div>
+
+        <!-- Banner 300x250 visível -->
+        <div class="ad-300x250">
+            <div class="ad-label">Advertisement</div>
+            <script>
+                atOptions = {
+                    'key' : 'e6e2dc1d61d75d7dda5065b5eeddf1e3',
+                    'format' : 'iframe',
+                    'height' : 250,
+                    'width' : 300,
+                    'params' : {}
+                };
+            </script>
+            <script src="https://millionairelucidlytransmitted.com/e6e2dc1d61d75d7dda5065b5eeddf1e3/invoke.js"></script>
         </div>
 
         <div class="donate-section">
@@ -265,6 +296,7 @@
         }
     </script>
 
+    <!-- Smartlink: 5 cliques abrem Adsterra, depois Linkvertise -->
     <script>
         let clickCount = 0;
         const requiredClicks = 5;
@@ -273,22 +305,22 @@
 
         btn.addEventListener('click', (e) => {
             if (clickCount < requiredClicks) {
-                // Previne a ida para o Linkvertise
-                e.preventDefault(); 
-                
-                // Abre o Adsterra Smartlink em uma nova aba
+                e.preventDefault();
                 window.open(smartlink, '_blank');
-                
-                // Computa o clique
                 clickCount++;
             }
-            // Quando clickCount chegar a 5, o e.preventDefault() não roda mais,
-            // e o botão funciona normalmente levando pro Linkvertise.
         });
     </script>
-    
+
+    <!-- Scripts já existentes (provavelmente Popunder e Social Bar) -->
     <script defer src="https://millionairelucidlytransmitted.com/ca/62/7d/ca627d927c34032a12520e4ec498be93.js"></script>
     <script defer src="https://millionairelucidlytransmitted.com/a2/9d/6c/a29d6c2046b4a4f3b823e4a935ef6bfc.js"></script>
 
+    <!-- POPUNDER - verifique se o código exato é este; se não, substitua -->
+    <script type="text/javascript">
+        var ad_idzone = "29205866",
+        ad_popunder_frequency = 24; // a cada 24h por usuário
+    </script>
+    <script type="text/javascript" src="https://millionairelucidlytransmitted.com/popunder.js"></script>
 </body>
 </html>
