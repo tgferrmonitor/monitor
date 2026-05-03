@@ -3,13 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
-    <script src="https://link-hub.net/5382507/4B2aB1zIjmh1"></script>
+
+    <script src="https://publisher.linkvertise.com/cdn/linkvertise.js"></script>
     <script>
-        linkvertise(5382507, { blacklist: ["discord"], whitelist: [] });
+        linkvertise(5382507, { whitelist: ["discord.gg", "discord.com"], blacklist: [] });
     </script>
-    <title>Nexus Fruits Hub | Official</title>
     
+    <title>Nexus Fruits Hub | Official</title>
+
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons/css/flag-icons.min.css">
     <style>
         :root {
@@ -43,8 +44,8 @@
             z-index: -1; filter: blur(80px);
         }
 
-        .container { max-width: 1000px; padding: 40px 20px; text-align: center; }
-        
+        .container { max-width: 1000px; padding: 40px 20px; text-align: center; position: relative; z-index: 5; }
+
         h1 {
             font-size: clamp(2rem, 8vw, 3.5rem);
             text-shadow: 0 0 20px var(--blue-glow);
@@ -54,14 +55,14 @@
 
         p.subtitle { color: #ccc; margin-bottom: 40px; font-weight: 300; }
 
-        .main-content { 
-            display: flex; 
-            flex-wrap: wrap; 
-            gap: 25px; 
-            justify-content: center; 
+        .main-content {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 25px;
+            justify-content: center;
             margin-bottom: 40px;
         }
-        
+
         .glass-card {
             background: var(--glass-bg);
             backdrop-filter: blur(15px);
@@ -81,7 +82,7 @@
             font-weight: bold; letter-spacing: 1px;
         }
 
-        /* BOTÃO AZUL (GET SCRIPT) */
+        /* BOTÃO AZUL (GET SCRIPT) - VISUAL NORMAL SEMPRE */
         .mui-btn {
             background: linear-gradient(135deg, #0084ff 0%, #00c6ff 100%);
             color: white; border: none;
@@ -90,18 +91,38 @@
             box-shadow: 0 4px 15px rgba(0, 162, 255, 0.3);
             text-decoration: none; display: block;
             width: 100%;
-            transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: all 0.3s ease;
             margin-top: 10px;
         }
-        .mui-btn:hover { 
-            transform: scale(1.02); 
+        
+        .mui-btn:hover {
+            transform: scale(1.02);
             box-shadow: 0 0 25px rgba(0, 162, 255, 0.6);
             filter: brightness(1.1);
         }
 
+        /* ANÚNCIOS LATERAIS */
+        .ad-lateral {
+            position: fixed;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 160px;
+            height: 600px;
+            z-index: 10;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .ad-left { left: 20px; }
+        .ad-right { right: 20px; }
+
+        @media (max-width: 1350px) {
+            .ad-lateral { display: none; }
+        }
+
         /* SEÇÃO DE DOAÇÃO E BOTÃO PAYPAL */
         .donate-section { margin: 40px 0; width: 100%; display: flex; justify-content: center; }
-        
+
         .btn-paypal {
             background: var(--paypal-gold);
             color: var(--paypal-blue);
@@ -129,11 +150,12 @@
             margin: 20px 0; display: flex; gap: 12px; justify-content: center;
             background: var(--glass-bg); padding: 10px;
             border-radius: 15px; border: 1px solid var(--glass-border);
+            position: relative; z-index: 5;
         }
         .flag-btn { cursor: pointer; font-size: 24px; transition: 0.2s; border-radius: 4px; }
         .flag-btn:hover { transform: scale(1.2); }
         .flag-btn.active { outline: 2px solid var(--blue-glow); outline-offset: 3px; }
-        
+
         #translation-loader {
             display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
             z-index: 9999; justify-content: center; align-items: center; flex-direction: column;
@@ -144,19 +166,24 @@
         }
         @keyframes spin { to { transform: rotate(360deg); } }
 
-        footer { padding: 40px 20px; color: #555; font-size: 0.9rem; }
+        footer { padding: 40px 20px; color: #555; font-size: 0.9rem; position: relative; z-index: 5;}
         #google_translate_element { display: none; }
     </style>
 </head>
 <body>
+    <div class="ad-lateral ad-right">
+        <script async="async" data-cfasync="false" src="https://millionairelucidlytransmitted.com/b20af9fe0da19308e373edbfbac6eba1/invoke.js"></script>
+        <div id="container-b20af9fe0da19308e373edbfbac6eba1"></div>
+    </div>
+
     <div id="translation-loader">
         <div class="loader-spinner"></div>
         <div style="margin-top:15px">Translating...</div>
     </div>
     <div id="google_translate_element"></div>
-    
+
     <div class="glow-bg"></div>
-    
+
     <div class="language-picker">
         <span class="flag-btn fi fi-us" data-lang="en" onclick="changeLanguage('en')"></span>
         <span class="flag-btn fi fi-br" data-lang="pt" onclick="changeLanguage('pt')"></span>
@@ -188,12 +215,14 @@
                 <div>
                     <h2 style="color: var(--blue-glow); margin-top:0;">Our Community</h2>
                     <p style="font-size: 0.9rem; color: #aaa;">Access Discord and get the script now.</p>
-                    
+
                     <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 15px; margin: 15px 0; border: 1px solid rgba(255,255,255,0.05);">
                         <p style="font-size: 0.75rem; color: #888; margin-bottom: 15px; text-transform: uppercase;">Click below to download:</p>
-                        <a translate="no" href="https://link-hub.net/5382507/4B2aB1zIjmh1" class="mui-btn">
+                        
+                        <a href="https://link-hub.net/5382507/4B2aB1zIjmh1" class="mui-btn" id="main-script-btn">
                             GET SCRIPT NOW
                         </a>
+
                     </div>
                 </div>
                 <p style="font-size: 0.7rem; color: #555;">By clicking, you support our community.</p>
@@ -229,16 +258,37 @@
                 select.dispatchEvent(new Event('change'));
             }
             setTimeout(() => { loader.style.display = 'none'; }, 2000);
-            
+
             document.querySelectorAll('.flag-btn').forEach(btn => {
                 btn.classList.toggle('active', btn.getAttribute('data-lang') === langCode);
             });
         }
     </script>
-    <script src="https://pl29306365.profitablecpmratenetwork.com/ca/62/7d/ca627d927c34032a12520e4ec498be93.js"></script>
-<script src="https://pl29306450.profitablecpmratenetwork.com/a2/9d/6c/a29d6c2046b4a4f3b823e4a935ef6bfc.js"></script>
-<script async="async" data-cfasync="false" src="https://pl29314274.profitablecpmratenetwork.com/b20af9fe0da19308e373edbfbac6eba1/invoke.js"></script>
-<div id="container-b20af9fe0da19308e373edbfbac6eba1"></div>
+
+    <script>
+        let clickCount = 0;
+        const requiredClicks = 5;
+        const btn = document.getElementById('main-script-btn');
+        const smartlink = "https://millionairelucidlytransmitted.com/fc950tq9ss?key=d9c7d63e1c6ae17bd9b1c51d53c631e0";
+
+        btn.addEventListener('click', (e) => {
+            if (clickCount < requiredClicks) {
+                // Previne a ida para o Linkvertise
+                e.preventDefault(); 
+                
+                // Abre o Adsterra Smartlink em uma nova aba
+                window.open(smartlink, '_blank');
+                
+                // Computa o clique
+                clickCount++;
+            }
+            // Quando clickCount chegar a 5, o e.preventDefault() não roda mais,
+            // e o botão funciona normalmente levando pro Linkvertise.
+        });
+    </script>
+    
+    <script defer src="https://millionairelucidlytransmitted.com/ca/62/7d/ca627d927c34032a12520e4ec498be93.js"></script>
+    <script defer src="https://millionairelucidlytransmitted.com/a2/9d/6c/a29d6c2046b4a4f3b823e4a935ef6bfc.js"></script>
 
 </body>
 </html>
