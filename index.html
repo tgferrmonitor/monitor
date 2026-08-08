@@ -1,326 +1,391 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <script src="https://publisher.linkvertise.com/cdn/linkvertise.js"></script>
+    <title>Gestão | Barbearia Juninho & Giovani</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;600&family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <script>
-        linkvertise(5382507, { whitelist: ["discord.gg", "discord.com"], blacklist: [] });
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'barber': ['Oswald', 'sans-serif'],
+                        'sans': ['Poppins', 'sans-serif'],
+                    },
+                    colors: {
+                        barber: {
+                            bg: '#0a0a0a',      // Preto profundo
+                            card: '#141414',    // Cinza muito escuro
+                            border: '#262626',  // Bordas discretas
+                            gold: '#d4af37',    // Dourado premium
+                            goldHover: '#b5952f',
+                            success: '#22c55e',
+                            danger: '#ef4444'
+                        }
+                    }
+                }
+            }
+        }
     </script>
-    
-    <title>Nexus Fruits Hub | Official</title>
-
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flag-icons/css/flag-icons.min.css">
     <style>
-        :root {
-            --blue-glow: #00a2ff;
-            --bg-dark: #0a0a0a;
-            --glass-bg: rgba(255, 255, 255, 0.05);
-            --glass-border: rgba(255, 255, 255, 0.1);
-            --paypal-gold: #ffc439;
-            --paypal-blue: #003087;
-        }
-
-        * { box-sizing: border-box; }
-
-        body {
-            margin: 0; padding: 0;
-            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
-            background-color: var(--bg-dark);
-            color: white;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            overflow-x: hidden;
-            min-height: 100vh;
-        }
-
-        .glow-bg {
-            position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            width: 600px; height: 600px;
-            background: radial-gradient(circle, rgba(0, 162, 255, 0.1) 0%, rgba(0,0,0,0) 70%);
-            z-index: -1; filter: blur(80px);
-        }
-
-        .container { max-width: 1000px; padding: 40px 20px; text-align: center; position: relative; z-index: 5; }
-
-        h1 {
-            font-size: clamp(2rem, 8vw, 3.5rem);
-            text-shadow: 0 0 20px var(--blue-glow);
-            margin-bottom: 10px;
-            letter-spacing: 2px;
-        }
-
-        p.subtitle { color: #ccc; margin-bottom: 40px; font-weight: 300; }
-
-        .main-content {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 25px;
-            justify-content: center;
-            margin-bottom: 40px;
-        }
-
-        .glass-card {
-            background: var(--glass-bg);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px; padding: 30px;
-            flex: 1; min-width: 320px;
-            box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.5);
-            transition: 0.3s;
-            display: flex; flex-direction: column; justify-content: space-between;
-        }
-
-        .status-badge {
-            background: rgba(0, 255, 127, 0.1); color: #00ff7f;
-            padding: 6px 15px; border-radius: 50px; font-size: 0.75rem;
-            border: 1px solid rgba(0, 255, 127, 0.5); display: inline-block; margin-bottom: 20px;
-            font-weight: bold; letter-spacing: 1px;
-        }
-
-        .mui-btn {
-            background: linear-gradient(135deg, #0084ff 0%, #00c6ff 100%);
-            color: white; border: none;
-            padding: 16px 20px; border-radius: 12px; font-weight: 800;
-            cursor: pointer; text-transform: uppercase;
-            box-shadow: 0 4px 15px rgba(0, 162, 255, 0.3);
-            text-decoration: none; display: block;
-            width: 100%;
-            transition: all 0.3s ease;
-            margin-top: 10px;
-        }
+        body { background-color: #0a0a0a; color: #e5e5e5; }
+        .glass-panel { background: rgba(20, 20, 20, 0.8); backdrop-filter: blur(10px); border: 1px solid #262626; }
+        ::-webkit-scrollbar { width: 6px; }
+        ::-webkit-scrollbar-track { background: #0a0a0a; }
+        ::-webkit-scrollbar-thumb { background: #333; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #d4af37; }
         
-        .mui-btn:hover {
-            transform: scale(1.02);
-            box-shadow: 0 0 25px rgba(0, 162, 255, 0.6);
-            filter: brightness(1.1);
-        }
-
-        /* ANÚNCIOS LATERAIS (Native Banner) */
-        .ad-lateral {
-            position: fixed;
-            top: 50%;
-            transform: translateY(-50%);
-            width: 160px;
-            height: 600px;
-            z-index: 10;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .ad-right { right: 20px; }
-
-        @media (max-width: 1350px) {
-            .ad-lateral { display: none; }
-        }
-
-        /* Bloco de anúncio 300x250 */
-        .ad-300x250 {
-            margin: 30px auto;
-            max-width: 300px;
-            background: var(--glass-bg);
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid var(--glass-border);
-            border-radius: 20px;
-            padding: 15px;
-            box-shadow: 0 8px 32px 0 rgba(0,0,0,0.5);
-            text-align: center;
-        }
-        .ad-label {
-            font-size: 0.65rem;
-            color: #777;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            margin-bottom: 10px;
-        }
-
-        .donate-section { margin: 40px 0; width: 100%; display: flex; justify-content: center; }
-
-        .btn-paypal {
-            background: var(--paypal-gold);
-            color: var(--paypal-blue);
-            padding: 20px 40px;
-            border-radius: 15px;
-            text-decoration: none;
-            font-weight: 800;
-            display: inline-block;
-            transition: all 0.3s ease;
-            box-shadow: 0 10px 30px rgba(255, 196, 57, 0.2);
-            border: 2px solid rgba(0, 48, 135, 0.1);
-            line-height: 1.4;
-            max-width: 400px;
-        }
-
-        .btn-paypal:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(255, 196, 57, 0.4);
-            background: #ffcc00;
-            filter: saturate(1.2);
-        }
-
-        .language-picker {
-            margin: 20px 0; display: flex; gap: 12px; justify-content: center;
-            background: var(--glass-bg); padding: 10px;
-            border-radius: 15px; border: 1px solid var(--glass-border);
-            position: relative; z-index: 5;
-        }
-        .flag-btn { cursor: pointer; font-size: 24px; transition: 0.2s; border-radius: 4px; }
-        .flag-btn:hover { transform: scale(1.2); }
-        .flag-btn.active { outline: 2px solid var(--blue-glow); outline-offset: 3px; }
-
-        #translation-loader {
-            display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.8);
-            z-index: 9999; justify-content: center; align-items: center; flex-direction: column;
-        }
-        .loader-spinner {
-            width: 40px; height: 40px; border: 3px solid rgba(255,255,255,0.1);
-            border-top-color: var(--blue-glow); border-radius: 50%; animation: spin 0.8s linear infinite;
-        }
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        footer { padding: 40px 20px; color: #555; font-size: 0.9rem; position: relative; z-index: 5;}
-        #google_translate_element { display: none; }
+        /* Ocultar abas inativas */
+        .tab-content { display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
-<body>
-    <!-- Native Banner lateral -->
-    <div class="ad-lateral ad-right">
-        <script async="async" data-cfasync="false" src="https://millionairelucidlytransmitted.com/b20af9fe0da19308e373edbfbac6eba1/invoke.js"></script>
-        <div id="container-b20af9fe0da19308e373edbfbac6eba1"></div>
-    </div>
+<body class="min-h-screen flex flex-col xl:flex-row font-sans">
 
-    <div id="translation-loader">
-        <div class="loader-spinner"></div>
-        <div style="margin-top:15px">Translating...</div>
-    </div>
-    <div id="google_translate_element"></div>
-
-    <div class="glow-bg"></div>
-
-    <div class="language-picker">
-        <span class="flag-btn fi fi-us" data-lang="en" onclick="changeLanguage('en')"></span>
-        <span class="flag-btn fi fi-br" data-lang="pt" onclick="changeLanguage('pt')"></span>
-        <span class="flag-btn fi fi-es" data-lang="es" onclick="changeLanguage('es')"></span>
-        <span class="flag-btn fi fi-ru" data-lang="ru" onclick="changeLanguage('ru')"></span>
-        <span class="flag-btn fi fi-in" data-lang="hi" onclick="changeLanguage('hi')"></span>
-        <span class="flag-btn fi fi-cn" data-lang="zh-CN" onclick="changeLanguage('zh-CN')"></span>
-    </div>
-
-    <div class="container">
-        <h1 translate="no">NEXUS FRUITS HUB</h1>
-        <p class="subtitle">The technology you needed to dominate the game.</p>
-
-        <div class="main-content">
-            <div class="glass-card">
-                <div>
-                    <div class="status-badge">UNDETECTED FOR 3+ MONTHS</div>
-                    <h2 style="color: var(--blue-glow); margin-top:0;">Safe Script</h2>
-                    <p style="font-size: 0.9rem; color: #aaa;">Total focus on security with advanced bypasses.</p>
-                    <ul style="text-align: left; line-height: 2; font-size: 0.9rem; list-style: none; padding: 0;">
-                        <li>🔥 Ultra Fast <b translate="no"> Auto Farm Level</b></li>
-                        <li>🛡️ Anti-Ban Protection Active</li>
-                        <li>⚙️ Simple Configuration</li>
-                    </ul>
-                </div>
+    <!-- MENU LATERAL -->
+    <aside class="w-full xl:w-64 glass-panel flex flex-col p-6 border-b xl:border-b-0 xl:border-r border-barber-border">
+        <div class="flex items-center gap-4 mb-10">
+            <div class="bg-barber-gold text-black p-3 rounded-full shadow-[0_0_15px_rgba(212,175,55,0.4)]">
+                <i class="fa-solid fa-scissors text-xl"></i>
             </div>
+            <div>
+                <h1 class="font-barber text-2xl font-semibold tracking-wide text-white uppercase">J & G</h1>
+                <p class="text-xs text-barber-gold tracking-widest uppercase">Barbearia</p>
+            </div>
+        </div>
 
-            <div class="glass-card">
-                <div>
-                    <h2 style="color: var(--blue-glow); margin-top:0;">Our Community</h2>
-                    <p style="font-size: 0.9rem; color: #aaa;">Access Discord and get the script now.</p>
+        <nav class="flex-1 space-y-3">
+            <button onclick="switchTab('dashboard')" id="btn-dashboard" class="w-full flex items-center gap-3 px-4 py-3 bg-barber-gold text-black rounded-lg font-semibold transition-all shadow-[0_0_10px_rgba(212,175,55,0.2)]">
+                <i class="fa-solid fa-chart-line"></i> Painel Geral
+            </button>
+            <button onclick="switchTab('historico')" id="btn-historico" class="w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg font-medium transition-all">
+                <i class="fa-solid fa-list-ul"></i> Todo o Histórico
+            </button>
+        </nav>
+    </aside>
 
-                    <div style="background: rgba(0,0,0,0.4); padding: 20px; border-radius: 15px; margin: 15px 0; border: 1px solid rgba(255,255,255,0.05);">
-                        <p style="font-size: 0.75rem; color: #888; margin-bottom: 15px; text-transform: uppercase;">Click below to download:</p>
-                        <a href="https://link-hub.net/5382507/4B2aB1zIjmh1" class="mui-btn" id="main-script-btn">
-                            GET SCRIPT NOW
-                        </a>
+    <!-- ÁREA PRINCIPAL -->
+    <main class="flex-1 p-4 xl:p-8 overflow-y-auto">
+        
+        <!-- ================= TAB: DASHBOARD (Tudo em 1 tela) ================= -->
+        <section id="dashboard" class="tab-content active h-full">
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                
+                <!-- COLUNA ESQUERDA (Métricas e Gráficos) -->
+                <div class="xl:col-span-2 space-y-8">
+                    <header>
+                        <h2 class="font-barber text-3xl text-white mb-1">Resumo do Mês</h2>
+                        <p class="text-gray-400 text-sm">Acompanhe o desempenho da barbearia em tempo real.</p>
+                    </header>
+
+                    <!-- Cards -->
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                        <div class="glass-panel p-5 rounded-xl border-l-4 border-barber-success">
+                            <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Entradas</p>
+                            <h3 class="text-xl font-bold text-barber-success" id="dash-receita">R$ 0</h3>
+                        </div>
+                        <div class="glass-panel p-5 rounded-xl border-l-4 border-barber-danger">
+                            <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Saídas</p>
+                            <h3 class="text-xl font-bold text-barber-danger" id="dash-despesas">R$ 0</h3>
+                        </div>
+                        <div class="glass-panel p-5 rounded-xl border-l-4 border-barber-gold">
+                            <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Lucro Líquido</p>
+                            <h3 class="text-xl font-bold text-white" id="dash-lucro">R$ 0</h3>
+                        </div>
+                        <div class="glass-panel p-5 rounded-xl border-l-4 border-blue-500">
+                            <p class="text-gray-400 text-xs uppercase tracking-wider mb-1">Cortes/Serviços</p>
+                            <h3 class="text-xl font-bold text-white" id="dash-clientes">0</h3>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="glass-panel p-5 rounded-xl">
+                            <h3 class="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">Últimos 7 dias</h3>
+                            <div class="h-48"><canvas id="cashFlowChart"></canvas></div>
+                        </div>
+                        <div class="glass-panel p-5 rounded-xl">
+                            <h3 class="text-sm font-semibold text-gray-300 mb-4 uppercase tracking-wider">Juninho vs Giovani</h3>
+                            <div class="h-48 flex justify-center"><canvas id="barberChart"></canvas></div>
+                        </div>
                     </div>
                 </div>
-                <p style="font-size: 0.7rem; color: #555;">By clicking, you support our community.</p>
+
+                <!-- COLUNA DIREITA (Ação Rápida - Foco em ZERO cliques) -->
+                <div class="xl:col-span-1">
+                    <div class="glass-panel p-6 rounded-xl sticky top-8 border-barber-gold/30 shadow-[0_0_20px_rgba(212,175,55,0.05)]">
+                        <h3 class="font-barber text-2xl text-barber-gold mb-4 border-b border-gray-800 pb-2"><i class="fa-solid fa-bolt mr-2"></i> Adicionar Rápido</h3>
+                        
+                        <!-- Botões de Lançamento em 1 Clique -->
+                        <div class="flex gap-2 mb-6">
+                            <button onclick="quickAdd('Juninho')" class="flex-1 bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-gray-700 p-3 rounded-lg text-sm transition-all group">
+                                <i class="fa-solid fa-scissors text-barber-gold mb-1 group-hover:scale-110 transition-transform"></i><br>
+                                Corte <b class="text-white">Juninho</b>
+                            </button>
+                            <button onclick="quickAdd('Giovani')" class="flex-1 bg-[#1a1a1a] hover:bg-[#2a2a2a] border border-gray-700 p-3 rounded-lg text-sm transition-all group">
+                                <i class="fa-solid fa-scissors text-blue-400 mb-1 group-hover:scale-110 transition-transform"></i><br>
+                                Corte <b class="text-white">Giovani</b>
+                            </button>
+                        </div>
+
+                        <div class="relative flex py-2 items-center mb-4">
+                            <div class="flex-grow border-t border-gray-800"></div>
+                            <span class="flex-shrink-0 mx-4 text-gray-500 text-xs uppercase">Ou lance detalhado</span>
+                            <div class="flex-grow border-t border-gray-800"></div>
+                        </div>
+
+                        <!-- Formulário Compacto -->
+                        <form id="transactionForm" class="space-y-4">
+                            <div class="flex gap-2">
+                                <select id="tipo" class="w-1/3 bg-[#0a0a0a] border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-barber-gold outline-none">
+                                    <option value="entrada">Entrada</option>
+                                    <option value="saida">Saída</option>
+                                </select>
+                                <input type="number" id="valor" step="0.01" placeholder="R$ 0,00" required class="w-2/3 bg-[#0a0a0a] border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-barber-gold outline-none font-bold">
+                            </div>
+                            
+                            <input type="text" id="categoria" placeholder="Ex: Corte, Pomada, Luz..." required class="w-full bg-[#0a0a0a] border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-barber-gold outline-none">
+                            
+                            <div class="flex gap-2">
+                                <select id="profissional" class="w-1/2 bg-[#0a0a0a] border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-barber-gold outline-none">
+                                    <option value="Juninho">Juninho</option>
+                                    <option value="Giovani">Giovani</option>
+                                    <option value="Loja">Barbearia (Despesa)</option>
+                                </select>
+                                <select id="pagamento" class="w-1/2 bg-[#0a0a0a] border border-gray-700 rounded-lg p-2 text-sm text-white focus:border-barber-gold outline-none">
+                                    <option value="Pix">Pix</option>
+                                    <option value="Cartão">Cartão</option>
+                                    <option value="Dinheiro">Dinheiro</option>
+                                </select>
+                            </div>
+
+                            <button type="submit" class="w-full py-3 mt-2 bg-barber-gold hover:bg-barber-goldHover text-black font-bold uppercase tracking-wider rounded-lg transition-all shadow-[0_4px_15px_rgba(212,175,55,0.3)]">
+                                Salvar <i class="fa-solid fa-check ml-1"></i>
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
-        </div>
+        </section>
 
-        <!-- Banner 300x250 visível -->
-        <div class="ad-300x250">
-            <div class="ad-label">Advertisement</div>
-            <script>
-                atOptions = {
-                    'key' : 'e6e2dc1d61d75d7dda5065b5eeddf1e3',
-                    'format' : 'iframe',
-                    'height' : 250,
-                    'width' : 300,
-                    'params' : {}
-                };
-            </script>
-            <script src="https://millionairelucidlytransmitted.com/e6e2dc1d61d75d7dda5065b5eeddf1e3/invoke.js"></script>
-        </div>
+        <!-- ================= TAB: HISTÓRICO ================= -->
+        <section id="historico" class="tab-content h-full">
+            <header class="mb-6 flex justify-between items-end">
+                <div>
+                    <h2 class="font-barber text-3xl text-white">Histórico Completo</h2>
+                    <p class="text-gray-400">Todos os registros detalhados.</p>
+                </div>
+                <button onclick="clearData()" class="px-4 py-2 border border-red-900 text-red-500 hover:bg-red-900/30 rounded-lg text-sm transition-all">
+                    <i class="fa-solid fa-trash mr-1"></i> Zerar Sistema
+                </button>
+            </header>
 
-        <div class="donate-section">
-            <a href="https://www.paypal.com/donate/?business=A5A928ENY4WPG&no_recurring=0&item_name=NexusFruitHub&currency_code=USD"
-               target="_blank" class="btn-paypal" translate="no">
-                ☕ Are you smart?<br>
-                Able to support Nexus Free?<br>
-                PAYPAL
-            </a>
-        </div>
-    </div>
+            <div class="glass-panel rounded-xl overflow-hidden">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-[#0a0a0a] border-b border-gray-800 text-xs uppercase tracking-wider text-gray-500">
+                            <th class="p-4 font-medium">Data</th>
+                            <th class="p-4 font-medium">Categoria</th>
+                            <th class="p-4 font-medium">Profissional</th>
+                            <th class="p-4 font-medium text-right">Valor</th>
+                            <th class="p-4 text-center"><i class="fa-solid fa-gear"></i></th>
+                        </tr>
+                    </thead>
+                    <tbody id="table-body" class="divide-y divide-gray-800/50"></tbody>
+                </table>
+            </div>
+        </section>
+    </main>
 
-    <footer>
-        <p>&copy; 2026 <strong>tgferr code lover</strong> - All Rights Reserved</p>
-    </footer>
-
-    <script type="text/javascript" src="https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit"></script>
     <script>
-        function googleTranslateElementInit() {
-            new google.translate.TranslateElement({pageLanguage: 'en', autoDisplay: false}, 'google_translate_element');
+        let transactions = JSON.parse(localStorage.getItem('barbeariaData')) || [];
+        let cashFlowChartInstance = null;
+        let barberChartInstance = null;
+
+        document.addEventListener('DOMContentLoaded', updateApp);
+
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active'));
+            document.getElementById(tabId).classList.add('active');
+            
+            ['dashboard', 'historico'].forEach(id => {
+                const btn = document.getElementById(`btn-${id}`);
+                if (id === tabId) {
+                    btn.className = "w-full flex items-center gap-3 px-4 py-3 bg-barber-gold text-black rounded-lg font-semibold transition-all shadow-[0_0_10px_rgba(212,175,55,0.2)]";
+                } else {
+                    btn.className = "w-full flex items-center gap-3 px-4 py-3 text-gray-400 hover:bg-gray-800 hover:text-white rounded-lg font-medium transition-all";
+                }
+            });
+            if (tabId === 'dashboard') updateApp();
         }
 
-        function changeLanguage(langCode) {
-            const loader = document.getElementById('translation-loader');
-            loader.style.display = 'flex';
-            const select = document.querySelector('.goog-te-combo');
-            if (select) {
-                select.value = langCode;
-                select.dispatchEvent(new Event('change'));
-            }
-            setTimeout(() => { loader.style.display = 'none'; }, 2000);
+        // FUNÇÃO MAGICA: Adiciona um corte com 1 clique
+        function quickAdd(profissional) {
+            // Valor padrão do corte (Altere aqui se o preço for diferente)
+            const valorPadrao = 45.00; 
 
-            document.querySelectorAll('.flag-btn').forEach(btn => {
-                btn.classList.toggle('active', btn.getAttribute('data-lang') === langCode);
+            const transaction = {
+                id: Date.now(),
+                tipo: 'entrada',
+                data: new Date().toISOString().split('T')[0], // Pega a data de hoje
+                categoria: 'Corte de Cabelo',
+                valor: valorPadrao,
+                profissional: profissional,
+                pagamento: 'Pix'
+            };
+            transactions.push(transaction);
+            saveData();
+            showNotification(`Corte de ${profissional} adicionado!`);
+            updateApp();
+        }
+
+        document.getElementById('transactionForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            const transaction = {
+                id: Date.now(),
+                tipo: document.getElementById('tipo').value,
+                data: new Date().toISOString().split('T')[0],
+                categoria: document.getElementById('categoria').value,
+                valor: parseFloat(document.getElementById('valor').value),
+                profissional: document.getElementById('profissional').value,
+                pagamento: document.getElementById('pagamento').value
+            };
+            transactions.push(transaction);
+            saveData();
+            document.getElementById('categoria').value = '';
+            document.getElementById('valor').value = '';
+            showNotification('Lançamento salvo!');
+            updateApp();
+        });
+
+        function deleteTransaction(id) {
+            transactions = transactions.filter(t => t.id !== id);
+            saveData();
+            updateApp();
+        }
+
+        function clearData() {
+            if(confirm('Atenção: Apagar todos os dados?')) {
+                transactions = [];
+                saveData();
+                updateApp();
+            }
+        }
+
+        function saveData() { localStorage.setItem('barbeariaData', JSON.stringify(transactions)); }
+
+        function updateApp() {
+            renderTable();
+            updateMetrics();
+            renderCharts();
+        }
+
+        function updateMetrics() {
+            const now = new Date();
+            let receita = 0, despesas = 0, clientes = 0;
+
+            transactions.forEach(t => {
+                const tDate = new Date(t.data + 'T00:00:00');
+                if (tDate.getMonth() === now.getMonth() && tDate.getFullYear() === now.getFullYear()) {
+                    if (t.tipo === 'entrada') { receita += t.valor; clientes++; } 
+                    else { despesas += t.valor; }
+                }
+            });
+
+            document.getElementById('dash-receita').innerText = formatCurrency(receita);
+            document.getElementById('dash-despesas').innerText = formatCurrency(despesas);
+            document.getElementById('dash-lucro').innerText = formatCurrency(receita - despesas);
+            document.getElementById('dash-clientes').innerText = clientes;
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = '';
+            
+            const sorted = [...transactions].sort((a, b) => b.id - a.id).slice(0, 50); // Mostra os últimos 50
+            
+            sorted.forEach(t => {
+                const isEntrada = t.tipo === 'entrada';
+                const color = isEntrada ? 'text-barber-success' : 'text-barber-danger';
+                const signal = isEntrada ? '+' : '-';
+                const date = new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR');
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-gray-800/30 transition-colors">
+                        <td class="p-4 text-sm text-gray-400">${date}</td>
+                        <td class="p-4 text-sm text-white">${t.categoria} <span class="text-xs text-gray-500 block">${t.pagamento}</span></td>
+                        <td class="p-4 text-sm ${t.profissional === 'Juninho' ? 'text-barber-gold' : 'text-blue-400'}">${t.profissional}</td>
+                        <td class="p-4 text-right font-bold ${color}">${signal} ${formatCurrency(t.valor)}</td>
+                        <td class="p-4 text-center"><button onclick="deleteTransaction(${t.id})" class="text-gray-600 hover:text-red-500"><i class="fa-solid fa-trash"></i></button></td>
+                    </tr>
+                `;
             });
         }
-    </script>
 
-    <!-- Smartlink: 5 cliques abrem Adsterra, depois Linkvertise -->
-    <script>
-        let clickCount = 0;
-        const requiredClicks = 5;
-        const btn = document.getElementById('main-script-btn');
-        const smartlink = "https://millionairelucidlytransmitted.com/fc950tq9ss?key=d9c7d63e1c6ae17bd9b1c51d53c631e0";
-
-        btn.addEventListener('click', (e) => {
-            if (clickCount < requiredClicks) {
-                e.preventDefault();
-                window.open(smartlink, '_blank');
-                clickCount++;
+        function renderCharts() {
+            Chart.defaults.color = '#737373';
+            Chart.defaults.font.family = 'Poppins';
+            
+            const last7Days = [];
+            const entradasData = Array(7).fill(0);
+            const saidasData = Array(7).fill(0);
+            
+            for (let i = 6; i >= 0; i--) {
+                const d = new Date();
+                d.setDate(d.getDate() - i);
+                last7Days.push(d.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'}));
             }
-        });
-    </script>
 
-    <!-- Scripts já existentes (provavelmente Popunder e Social Bar) -->
-    <script defer src="https://millionairelucidlytransmitted.com/ca/62/7d/ca627d927c34032a12520e4ec498be93.js"></script>
-    <script defer src="https://millionairelucidlytransmitted.com/a2/9d/6c/a29d6c2046b4a4f3b823e4a935ef6bfc.js"></script>
+            transactions.forEach(t => {
+                const dateStr = new Date(t.data + 'T00:00:00').toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
+                const index = last7Days.indexOf(dateStr);
+                if (index !== -1) {
+                    if (t.tipo === 'entrada') entradasData[index] += t.valor;
+                    else saidasData[index] += t.valor;
+                }
+            });
 
-    <!-- POPUNDER - verifique se o código exato é este; se não, substitua -->
-    <script type="text/javascript">
-        var ad_idzone = "29205866",
-        ad_popunder_frequency = 0.0020; // a cada 24h por usuário
+            if (cashFlowChartInstance) cashFlowChartInstance.destroy();
+            cashFlowChartInstance = new Chart(document.getElementById('cashFlowChart').getContext('2d'), {
+                type: 'bar',
+                data: { labels: last7Days, datasets: [
+                    { label: 'Entrada', data: entradasData, backgroundColor: '#d4af37', borderRadius: 4 },
+                    { label: 'Saída', data: saidasData, backgroundColor: '#ef4444', borderRadius: 4 }
+                ]},
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } }, scales: { y: { grid: { color: '#262626' } }, x: { grid: { display: false } } } }
+            });
+
+            let valJuninho = 0, valGiovani = 0;
+            transactions.forEach(t => {
+                const tDate = new Date(t.data + 'T00:00:00');
+                if (t.tipo === 'entrada' && tDate.getMonth() === new Date().getMonth()) {
+                    if (t.profissional === 'Juninho') valJuninho += t.valor;
+                    else if (t.profissional === 'Giovani') valGiovani += t.valor;
+                }
+            });
+
+            if (barberChartInstance) barberChartInstance.destroy();
+            barberChartInstance = new Chart(document.getElementById('barberChart').getContext('2d'), {
+                type: 'doughnut',
+                data: { labels: ['Juninho', 'Giovani'], datasets: [{ data: [valJuninho, valGiovani], backgroundColor: ['#d4af37', '#3b82f6'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: false, cutout: '75%', plugins: { legend: { position: 'right' } } }
+            });
+        }
+
+        function formatCurrency(value) { return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value); }
+
+        function showNotification(msg) {
+            const div = document.createElement('div');
+            div.className = "fixed top-5 right-5 bg-barber-gold text-black px-6 py-3 rounded-lg shadow-lg font-bold flex items-center gap-2 z-50 transition-opacity duration-300";
+            div.innerHTML = `<i class="fa-solid fa-check"></i> ${msg}`;
+            document.body.appendChild(div);
+            setTimeout(() => { div.style.opacity = '0'; setTimeout(() => div.remove(), 300); }, 2500);
+        }
     </script>
-    <script type="text/javascript" src="https://millionairelucidlytransmitted.com/popunder.js"></script>
 </body>
 </html>
